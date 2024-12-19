@@ -1,0 +1,15 @@
+fail_fast: true
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.3
+    hooks:
+      - id: ruff
+        args: [ --fix ]
+      - id: ruff-format
+  - repo: local
+    hooks:
+      - id: add-ticket-number
+        name: Add Jira ticket number to commit message
+        entry: ./scripts/add-ticket-number.sh
+        language: system
+        stages: [commit-msg]
