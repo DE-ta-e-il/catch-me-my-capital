@@ -2,24 +2,23 @@
 # This DAG does full refresh every month.
 # TODO: /tmp cleanup
 
-import json
-import os
 import time
 from datetime import datetime
 
-import boto3
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 
 import plugins.helpers as helpers
 
-# Constants
+# Globals
 S3_BUCKET = "team3-1-s3"
 DOWNLOAD_PATH = "/tmp"
-S3 = boto3.client("s3")
 GICS = "/tmp/c_gics.json"
 
 
+#### THIS IS DISCONTINUED
+# Can't scroll to bottom, can't get all the stuff
 # This uses the same page, hence one task two jobs
 def kospi_and_kosdaq_industry_codes(**ctxt):
     url = "http://data.krx.co.kr/contents/MDC/MDI/mdiLoader/index.cmd?menuId=MDC0201020506"
@@ -77,43 +76,27 @@ def gics_industry_codes(**ctxt):
     for i, r in enumerate(rows):
         if i % 2 == 0:  # Even indices indicate the name of the previous odd indices
             target = r.text.strip()
+            name = rows[i + 1].text.strip()
             if len(target) == 2:
-                sectors[target] = sectors.get(target, rows[i + 1])
+                sectors[target] = sectors.get(target, name)
             elif len(target) == 4:
-                industry_group[target] = industry_group.get(target, rows[i + 1])
+                industry_group[target] = industry_group.get(target, name)
             elif len(target) == 6:
-                industry[target] = industry.get(target, rows[i + 1])
+                industry[target] = industry.get(target, name)
             else:
-                sub_industry[target] = sub_industry.get(target, rows[i + 1])
+                sub_industry[target] = sub_industry.get(target, name)
 
     # save
     # indents of 4
-    with open(GICS, "w") as f:
-        json.dump([sectors, industry_group, industry, sub_industry], f, indent=4)
+    # with open(GICS, "w") as f:
+    #     json.dump([sectors, industry_group, industry, sub_industry], f, indent=4)
 
-    return "puff"
+    # with open(GICS, "r") as f:
+    #     CURR_FILE = f.read()
 
-
-# 에스쭈리
-def upload_to_s3(**ctxt):
-    execution_date = ctxt["execution_date"]
-    year = execution_date.strftime("%Y")
-    month = execution_date.strftime("%m")
-
-    files_to_upload = [
-        ctxt["ti"].xcom_pull(key="kospi", task_ids="kospi_kosdaq_industry_codes"),
-        ctxt["ti"].xcom_pull(key="kosdaq", task_ids="kospi_kosdaq_industry_codes"),
-        GICS,
-    ]
-
-    for f in files_to_upload:
-        S3.upload_file(
-            f,
-            S3_BUCKET,
-            f"bronze/industry_code/year={year}/month={month}/{os.path.basename(f)}",
-        )
-        os.remove(f)
-
+    ctxt["ti"].xcom_push(
+        key="gics", value=[sectors, industry_group, industry, sub_industry]
+    )
     return "puff"
 
 
@@ -124,22 +107,27 @@ with DAG(
     catchup=False,
     default_args={
         "retries": 0,
+        "trigger_rule": "all_success",
     },
     max_active_tasks=1,
 ) as dag:
-    task01 = PythonOperator(
-        task_id="kospi_kosdaq_industry_codes",
-        python_callable=kospi_and_kosdaq_industry_codes,
-    )
+    # task01 = PythonOperator(
+    #     task_id="kospi_kosdaq_industry_codes",
+    #     python_callable=kospi_and_kosdaq_industry_codes,
+    # )
 
     task02 = PythonOperator(
         task_id="gics_industry_codes",
         python_callable=gics_industry_codes,
     )
 
-    task03 = PythonOperator(
-        task_id="upload_to_s3",
-        python_callable=upload_to_s3,
+    task03 = S3CreateObjectOperator(
+        task_id="gics_to_s3",
+        aws_conn_id="aws_general",
+        s3_bucket=S3_BUCKET,
+        s3_key="bronze/industry_code/year={{ ds[:4] }}/month={{ ds[5:7] }}/c_gics.json",
+        data="{{ task_instance.xcom_pull(task_ids='gics_industry_codes', key='gics') }}",
+        replace=True,
     )
 
-    task01 >> task02 >> task03
+    task02 >> task03
