@@ -4,6 +4,9 @@
 ### Linux ###
 *~
 
+# Airflow
+logs/
+
 # Scripts used in development
 delete.sh
 
