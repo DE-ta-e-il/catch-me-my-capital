@@ -34,7 +34,7 @@ S3_BUCKET = "team3-1-s3"
 # TODO: What happens when a bond matures??
 BONDS = {
     "us1995_2025": {
-        "chart": f"	https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,346171,1330,333&from={RANGE[0].strftime('%Y%m%d')}&to={RANGE[1].strftime('%Y%m%d')}",
+        "chart": f"https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,346171,1330,333&from={RANGE[0].strftime('%Y%m%d')}&to={RANGE[1].strftime('%Y%m%d')}",
         "meta": "https://markets.businessinsider.com/bonds/7_625-us-staatsanleihen-bond-2025-us912810et17",
     },
     "us2021_2041": {
