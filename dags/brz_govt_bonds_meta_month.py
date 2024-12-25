@@ -1,5 +1,4 @@
-# TODO: must consider the partition cleanup .. IN OTHER DAGS
-# monthly cleanup makes 'm_xxx.json' files, yearly cleanup makes 'y_xxx.json' files?
+# This DAG crawls for meta data of all bonds
 import time
 from datetime import datetime, timedelta
 
@@ -13,6 +12,7 @@ from bs4 import BeautifulSoup
 # Globals
 START_DATE = datetime.now() - timedelta(days=1)
 S3_BUCKET = "team3-1-s3"
+# TODO: Move it to a JSON? // pre-crawl for a list -> categories & urls to json
 BONDS = {
     "kr2024_2029": {
         "meta": "https://markets.businessinsider.com/bonds/korea-_republikdl-notes_202429-bond-2029-us50064fax24",
@@ -40,6 +40,45 @@ BONDS = {
     },
     "kr2018_2028": {
         "meta": "https://markets.businessinsider.com/bonds/korea-_republikdl-notes_201828-bond-2028-us50064fap99",
+    },
+    "us1995_2025": {
+        "meta": "https://markets.businessinsider.com/bonds/7_625-us-staatsanleihen-bond-2025-us912810et17",
+    },
+    "us2021_2041": {
+        "meta": "https://markets.businessinsider.com/bonds/united_states_of_americadl-bonds_202141-bond-2041-us912810tc27",
+    },
+    "us2020_2027": {
+        "meta": "https://markets.businessinsider.com/bonds/united_states_of_americadl-notes_202027-bond-2027-us912828z781",
+    },
+    "us2012_2042": {
+        "meta": "https://markets.businessinsider.com/bonds/3_125-us-staatsanleihen-bond-2042-us912810qu51",
+    },
+    "us2013_2043": {
+        "meta": "https://markets.businessinsider.com/bonds/united_states_of_americadl-notes_201343-bond-2043-us912810qz49",
+    },
+    "us2015_2045": {
+        "meta": "https://markets.businessinsider.com/bonds/united_states_of_americadl-notes_201545-bond-2045-us912810rn00",
+    },
+    "us2020_2030": {
+        "meta": "https://markets.businessinsider.com/bonds/united_states_of_americadl-notes_202030-bond-2030-us91282cae12",
+    },
+    "us2022_2025": {
+        "meta": "https://markets.businessinsider.com/bonds/united_states_of_americadl-notes_202225-bond-2025-us91282cfk27",
+    },
+    "us2023_2030": {
+        "meta": "https://markets.businessinsider.com/bonds/united_states_of_americadl-notes_202330-bond-2030-us91282cgs44",
+    },
+    "us2023_2026": {
+        "meta": "https://markets.businessinsider.com/bonds/united_states_of_americadl-notes_202326-bond-2026-us91282chh79",
+    },
+    "us2023_2028": {
+        "meta": "https://markets.businessinsider.com/bonds/united_states_of_americadl-notes_202328-bond-2028-us91282chq78",
+    },
+    "us2019_2026": {
+        "meta": "https://markets.businessinsider.com/bonds/united_states_of_americadl-notes_201926-bond-2026-us912828yg91",
+    },
+    "us2018_2025": {
+        "meta": "https://markets.businessinsider.com/bonds/united_states_of_americadl-notes_201825-bond-2025-us9128284f40",
     },
 }
 

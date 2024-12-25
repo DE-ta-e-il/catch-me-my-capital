@@ -21,8 +21,12 @@ RANGE = (
     (datetime(2015, 1, 1), START_DATE)
     if FIRST_RUN
     else (
-        datetime.strptime("{{ ds }}", "%Y-%m-%d") - timedelta(days=1),
-        datetime.strptime("{{ ds }}", "%Y-%m-%d"),
+        (datetime.strptime("{{ ds }}", "%Y-%m-%d") - timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        ),
+        datetime.strptime("{{ ds }}", "%Y-%m-%d").replace(
+            hour=0, minute=0, second=0, microsecond=0
+        ),
     )
 )
 S3_BUCKET = "team3-1-s3"
