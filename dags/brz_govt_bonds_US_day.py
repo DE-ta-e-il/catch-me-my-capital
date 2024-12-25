@@ -96,7 +96,7 @@ def check_first_run(*args, **ctxt):
         return "task_group2"
 
 
-def get_govt_bond_data_kr(target, **ctxt):
+def get_govt_bond_data_us(target, **ctxt):
     # the daily data
     response = requests.get(BONDS[target]["chart"])
     time.sleep(3)
@@ -152,7 +152,7 @@ with DAG(
         for b in BONDS:
             curr_task = PythonOperator(
                 task_id=f"govt_bonds_{b}",
-                python_callable=get_govt_bond_data_kr,
+                python_callable=get_govt_bond_data_us,
                 op_args=[b],
             )
             if prev_task:
