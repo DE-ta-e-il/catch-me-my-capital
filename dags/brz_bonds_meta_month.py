@@ -107,6 +107,23 @@ META = {
             "meta": "https://markets.businessinsider.com/bonds/korea_expressway_corpdl-medium-term_notes_201527-bond-2027-xs1203861403",
         },
     },
+    "corp_bonds_us": {
+        "APPL2016_2026": {
+            "meta": "https://markets.businessinsider.com/bonds/apple_incad-notes_201626-bond-2026-au3cb0237881",
+        },
+        "NYLF2019_2027": {
+            "meta": "https://markets.businessinsider.com/bonds/new_york_life_global_fundingsf-medium-term_notes_201927-bond-2027-ch0471297959",
+        },
+        "JOHN1999_2029": {
+            "meta": "https://markets.businessinsider.com/bonds/6_950-johnson-johnson-bond-2029-us478160aj37",
+        },
+        "MSCP2016_2026": {
+            "meta": "https://markets.businessinsider.com/bonds/microsoft_corpdl-notes_201616-26-bond-2026-us594918br43",
+        },
+        "TNVA1995_2025": {
+            "meta": "https://markets.businessinsider.com/bonds/6_750-tennessee-valley-authority-bond-2025-us880591cj98",
+        },
+    },
 }
 
 
