@@ -32,31 +32,31 @@ S3_BUCKET = "team3-1-s3"
 # NOTE: Maximum Moody's rating for KR corp bonds are Aa2. Data points : once a day.
 BONDS = {
     "EIBK2016_2027": {
-        "chart": "https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,34831838,203,88&from=19700201&to=20241226",
+        "chart": f"https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,34831838,203,88&from={RANGE[0].strftime('%Y%m%d')}&to={RANGE[1].strftime('%Y%m%d')}",
         "meta": "https://markets.businessinsider.com/bonds/export-import_bk_of_korea-_thead-medium-term_notes_201627-bond-2027-au3cb0241248",
     },
     "SHBK2018_2028": {
-        "chart": "https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,43398551,16,88&from=19700201&to=20241226",
+        "chart": f"https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,43398551,16,88&from={RANGE[0].strftime('%Y%m%d')}&to={RANGE[1].strftime('%Y%m%d')}",
         "meta": "https://markets.businessinsider.com/bonds/shinhan_bank_co-bond-2028-au3cb0256113",
     },
     "KNOL2020_2027": {
-        "chart": "https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,55499207,14,1&from=19700201&to=20241226",
+        "chart": f"https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,55499207,14,1&from={RANGE[0].strftime('%Y%m%d')}&to={RANGE[1].strftime('%Y%m%d')}",
         "meta": "https://markets.businessinsider.com/bonds/korea_national_oil_corpsf-medium-term_notes_202027-bond-2027-ch0554992070",
     },
     "KWRS2023_2025": {
-        "chart": "https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,127136063,4,1&from=19700201&to=20241226",
+        "chart": f"https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,127136063,4,1&from={RANGE[0].strftime('%Y%m%d')}&to={RANGE[1].strftime('%Y%m%d')}",
         "meta": "https://markets.businessinsider.com/bonds/korea_water_resources_corpsf-medium-term_notes_202325-bond-2025-ch1271360633",
     },
     "KELP1997_2027": {
-        "chart": "https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,946178,13,333&from=19700201&to=20241226",
+        "chart": f"https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,946178,13,333&from={RANGE[0].strftime('%Y%m%d')}&to={RANGE[1].strftime('%Y%m%d')}",
         "meta": "https://markets.businessinsider.com/bonds/7_000-korea-electric-power-bond-2027-us500631ah98",
     },
     "KDVB2020_2026": {
-        "chart": "https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,57798367,14,333&from=19700201&to=20241226",
+        "chart": f"https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,57798367,14,333&from={RANGE[0].strftime('%Y%m%d')}&to={RANGE[1].strftime('%Y%m%d')}",
         "meta": "https://markets.businessinsider.com/bonds/korea_development_bank-_thedl-notes_202026-bond-2026-us500630de57",
     },
     "KEXP2015_2027": {
-        "chart": "https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,49624867,13,333&from=19700201&to=20241226",
+        "chart": f"https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,49624867,13,333&from={RANGE[0].strftime('%Y%m%d')}&to={RANGE[1].strftime('%Y%m%d')}",
         "meta": "https://markets.businessinsider.com/bonds/korea_expressway_corpdl-medium-term_notes_201527-bond-2027-xs1203861403",
     },
 }
