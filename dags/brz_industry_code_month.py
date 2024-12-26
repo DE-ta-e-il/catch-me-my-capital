@@ -167,23 +167,22 @@ with DAG(
     start_date=datetime(2024, 12, 1),
     schedule_interval="0 0 1 * *",
     catchup=False,
-    default_args={
-        "retries": 0,
-        "trigger_rule": "all_success",
-    },
+    tags=["bronze"],
+    description="A DAG that fetches industry(sector) codes for stocks.",
+    default_args={"retries": 0, "trigger_rule": "all_success", "owner": "dee"},
     max_active_tasks=1,
 ) as dag:
-    task01 = PythonOperator(
+    kospi_codes_fetcher = PythonOperator(
         task_id="kospi_industry_codes",
         python_callable=kospi_industry_codes,
     )
 
-    task02 = PythonOperator(
+    kosdaq_codes_fetcher = PythonOperator(
         task_id="kosdaq_industry_codes",
         python_callable=kosdaq_industry_codes,
     )
 
-    task03 = PythonOperator(
+    gics_codes_fetcher = PythonOperator(
         task_id="gics_industry_codes",
         python_callable=gics_industry_codes,
     )
@@ -208,4 +207,4 @@ with DAG(
                 prev_task >> curr_task
             prev_task = curr_task
 
-    task01 >> task02 >> task03 >> task_group1
+    kospi_codes_fetcher >> kosdaq_codes_fetcher >> gics_codes_fetcher >> task_group1
