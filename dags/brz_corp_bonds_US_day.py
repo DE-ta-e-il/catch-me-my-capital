@@ -26,7 +26,6 @@ BOND_KINDS = [
 
 
 # Task 1
-# Task 1
 def url_generator(**ctxt):
     ds = ctxt["ds"]
     d_range = (
@@ -41,7 +40,7 @@ def url_generator(**ctxt):
             ),
         )
     )
-    # NOTE: Maximum Moody's rating for KR corp bonds are Aa2. Data points : once a day.
+    # NOTE: Maximum Moody's rating for US corp bonds are Aaa. Data points : once a day.
     bonds = {
         "APPL2016_2026": {
             "chart": f"https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData=1,32823537,1330,88&from={d_range[0].strftime('%Y%m%d')}&to={d_range[1].strftime('%Y%m%d')}",
