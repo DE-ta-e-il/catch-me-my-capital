@@ -1,4 +1,6 @@
 # This DAG crawls for meta data of all bonds
+import json
+import os
 import time
 from datetime import datetime, timedelta
 
@@ -10,8 +12,10 @@ from airflow.utils.task_group import TaskGroup
 from bs4 import BeautifulSoup
 
 # Globals
-START_DATE = datetime.now() - timedelta(days=1)
-S3_BUCKET = "team3-1-s3"
+START_DATE = (datetime.now() - timedelta(days=1)).replace(
+    hour=0, minute=0, second=0, microsecond=0
+)
+S3_BUCKET = os.getenv("S3_BUCKET")
 # TODO: Move it to a JSON? // pre-crawl for a list -> categories & urls to json
 META = {
     "govt_bonds_kr": {
@@ -127,11 +131,11 @@ META = {
 }
 
 
-def get_meta_data(target, **ctxt):
+def get_meta_data(category, bond_name, **ctxt):
     # Bonds meta data crawling
     # TODO: ✅ Would it be better to do this on a separate DAG?
     # TODO: I should try the Soup on the industry code DAG?! 🤨
-    res = requests.get(META[target]["meta"])
+    res = requests.get(META[category][bond_name]["meta"])
     time.sleep(3)
     soup = BeautifulSoup(res.text, "html.parser")
     table = soup.find("table")  # there is only one table
@@ -144,7 +148,17 @@ def get_meta_data(target, **ctxt):
             content = cols[1].text.strip()
             data[header] = data.get(header, content)
 
-    ctxt["ti"].xcom_push(key=f"{target}_meta", value=data)
+    ds_year, ds_month = "{{ ds }}"[:4], "{{ ds }}"[5:7]
+    upload = S3CreateObjectOperator(
+        task_id=f"upload_{bond_name}",
+        aws_conn_id="aws_conn_id",
+        s3_bucket=S3_BUCKET,
+        s3_key=f"bronze/{category}/kind={bond_name}/year={ds_year}/month={ds_month}/{category}_{bond_name}_meta_{ds_year}-{ds_month}.json",
+        data=json.dumps(data),
+        replace=True,
+    )
+    upload.execute(context=ctxt)
+
     time.sleep(3)
 
     return "puff"
@@ -162,39 +176,18 @@ with DAG(
     max_active_tasks=1,
 ) as dag:
     # Dynamically generate crawling tasks
-    with TaskGroup(group_id="task_group1") as task_group1:
+    with TaskGroup(group_id="crawler_group") as meta_data_crawler_group:
+        # Put prev_task right below category loop to parallelize
+        prev_task = None
         for category in META:
-            prev_task = None
-            for bond_name in category:
+            for bond_name in META[category]:
                 curr_task = PythonOperator(
                     task_id=f"{category}_{bond_name}",
                     python_callable=get_meta_data,
-                    op_args=bond_name,
+                    op_args=[category, bond_name],
                 )
                 if prev_task:
                     prev_task >> curr_task
                 prev_task = curr_task
 
-        # Upload tasks
-    with TaskGroup(group_id="task_group2") as task_group2:
-        ds_year, ds_month = "{{ ds[:4] }}", "{{ ds[5:7] }}"
-        for category in META:
-            prev_task = None
-            for bond_name in category:
-                curr_task = S3CreateObjectOperator(
-                    task_id=f"upload_{bond_name}",
-                    aws_conn_id="aws_general",
-                    s3_bucket=S3_BUCKET,
-                    s3_key=f"bronze/{category}/kind={bond_name}/year={ds_year}/month={ds_month}/{bond_name}_meta_{ds_year}-{ds_month}.json",
-                    data="{{ task_instance.xcom_pull(task_ids='govt_bonds_meta_"
-                    + bond_name
-                    + "', key='"
-                    + bond_name
-                    + "_meta') }}",
-                    replace=True,
-                )
-                if prev_task:
-                    prev_task >> curr_task
-                prev_task = curr_task
-
-    task_group1 >> task_group2
+    meta_data_crawler_group
