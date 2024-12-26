@@ -9,7 +9,6 @@ logs/
 
 # Scripts used in development
 delete.sh
-.ipynb
 
 # temporary files which can be created if a process still has a handle open of a deleted file
 .fuse_hidden*
@@ -143,6 +142,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+.ipynb
 
 # IPython
 profile_default/
