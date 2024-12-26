@@ -1,4 +1,1 @@
-selenium
-pandas
-boto3
 bs4
