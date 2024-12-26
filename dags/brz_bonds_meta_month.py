@@ -172,8 +172,11 @@ with DAG(
     default_args={
         "retries": 0,
         "trigger_rule": "all_success",
+        "owner": "dee",
     },
     max_active_tasks=1,
+    tags=["bronze"],
+    description="All Bonds Metadata, Govt And Corp",
 ) as dag:
     # Dynamically generate crawling tasks
     with TaskGroup(group_id="crawler_group") as meta_data_crawler_group:
