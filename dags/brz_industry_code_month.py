@@ -9,7 +9,6 @@ import requests
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
-from airflow.utils.task_group import TaskGroup
 from bs4 import BeautifulSoup
 
 # Globals
@@ -66,6 +65,18 @@ def kospi_industry_codes(**ctxt):
 
     ctxt["ti"].xcom_push(key="kospi", value=new_items)
 
+    # Upload
+    ds_year, ds_month = "{{ ds[:4] }}", "{{ ds[5:7] }}"
+    upload_kospi = S3CreateObjectOperator(
+        task_id="upload_kospi",
+        aws_conn_id="aws_conn_id",
+        s3_bucket=S3_BUCKET,
+        s3_key=f"bronze/industry_code/year={ds_year}/month={ds_month}/kospi_codes_{ds_year}-{ds_month}.json",
+        data=f"{new_items}",
+        replace=True,
+    )
+    upload_kospi.execute(context=ctxt)
+
     return "puff"
 
 
@@ -114,7 +125,17 @@ def kosdaq_industry_codes(**ctxt):
     if len(new_items) == 0:
         raise Exception("NOPE NOT GETTING ANY")
 
-    ctxt["ti"].xcom_push(key="kosdaq", value=new_items)
+    # Upload
+    ds_year, ds_month = "{{ ds[:4] }}", "{{ ds[5:7] }}"
+    upload_kosdaq = S3CreateObjectOperator(
+        task_id="upload_kosdaq",
+        aws_conn_id="aws_conn_id",
+        s3_bucket=S3_BUCKET,
+        s3_key=f"bronze/industry_code/year={ds_year}/month={ds_month}/kosdaq_codes_{ds_year}-{ds_month}.json",
+        data=f"{new_items}",
+        replace=True,
+    )
+    upload_kosdaq.execute(context=ctxt)
 
     return "puff"
 
@@ -148,17 +169,18 @@ def gics_industry_codes(**ctxt):
             else:
                 sub_industry[target] = sub_industry.get(target, name)
 
-    # save
-    # indents of 4
-    # with open(GICS, "w") as f:
-    #     json.dump([sectors, industry_group, industry, sub_industry], f, indent=4)
-
-    # with open(GICS, "r") as f:
-    #     CURR_FILE = f.read()
-
-    ctxt["ti"].xcom_push(
-        key="gics", value=[sectors, industry_group, industry, sub_industry]
+    # Upload
+    ds_year, ds_month = "{{ ds[:4] }}", "{{ ds[5:7] }}"
+    upload_gics = S3CreateObjectOperator(
+        task_id="upload_gics",
+        aws_conn_id="aws_conn_id",
+        s3_bucket=S3_BUCKET,
+        s3_key=f"bronze/industry_code/year={ds_year}/month={ds_month}/gics_codes_{ds_year}-{ds_month}.json",
+        data=f"{[sectors, industry_group, industry, sub_industry]}",
+        replace=True,
     )
+    upload_gics.execute(context=ctxt)
+
     return "puff"
 
 
@@ -187,24 +209,4 @@ with DAG(
         python_callable=gics_industry_codes,
     )
 
-    with TaskGroup(group_id="s3_group") as task_group1:
-        prev_task = None
-        ds_year, ds_month = "{{ ds[:4] }}", "{{ ds[5:7] }}"
-        for scope in ["kosdaq", "kospi", "gics"]:
-            curr_task = S3CreateObjectOperator(
-                task_id=f"upload_{scope}",
-                aws_conn_id="aws_conn_id",
-                s3_bucket=S3_BUCKET,
-                s3_key=f"bronze/industry_code/year={ds_year}/month={ds_month}/{scope}_codes_{ds_year}-{ds_month}.json",
-                data="{{ task_instance.xcom_pull(task_ids='"
-                + scope
-                + "_industry_codes', key='"
-                + scope
-                + "') }}",
-                replace=True,
-            )
-            if prev_task:
-                prev_task >> curr_task
-            prev_task = curr_task
-
-    kospi_codes_fetcher >> kosdaq_codes_fetcher >> gics_codes_fetcher >> task_group1
+    kospi_codes_fetcher >> kosdaq_codes_fetcher >> gics_codes_fetcher
