@@ -154,7 +154,7 @@ with DAG(
             execution_date (pendulum.DateTime): 데이터 수집 기준 날짜
 
         Raises:
-            Exception: S3에서 파일 복사 중 실패한 경우 발생
+            botocore.exceptions.ClientError: S3에서 파일 복사 중 실패한 경우 발생
 
         Returns:
             None
