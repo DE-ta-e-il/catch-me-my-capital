@@ -24,6 +24,10 @@ with DAG(
     default_args=default_args,
     tags=[Layer.BRONZE, Interval.DAILY, "commodities"],
 ) as dag:
+    # NOTE: 티커 목록(TICKER_LIST)에 대한 설명
+    # - "CL=F": 원유(WTI) 선물
+    # - "BZ=F": 원유(브렌트유) 선물
+    # - "GC=F": 금 선물
     TICKER_LIST = ["CL=F", "BZ=F", "GC=F"]
     S3_BUCKET = Variable.get("s3_bucket")
 
