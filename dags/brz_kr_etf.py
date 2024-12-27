@@ -26,6 +26,15 @@ def _is_holiday_today(year, month, today):
     # 모든 <locdate> 태그의 값 추출
     locdates = [item.text for item in root.findall(".//locdate")]
 
+    if int(month) == 12:
+        last_weekday = datetime(year, 12, 31)
+
+        while last_weekday.weekday() > 4:
+            last_weekday -= datetime.timedelta(days=1)
+
+        last_weekday_nodash = last_weekday.strftime("%Y%m%d")
+        locdates.append(last_weekday_nodash)
+
     # today와 일치하는 값이 있는지 확인
     if today in locdates:
         return True
@@ -104,9 +113,7 @@ def fetch_etf_data_from_krx_api(ds_nodash):
         current_page = int(data.get("pageNo"))
 
         if total_count == 0:
-            raise Exception(
-                f"Data retrieval failed: 'totalCount' is missing or empty. Full data: {data}"
-            )
+            raise Exception(f"No data found: 'totalCount' is 0. Full data: {data}")
 
         items = data.get("items", {}).get("item", [])
         all_items.extend(items)
@@ -119,18 +126,9 @@ def fetch_etf_data_from_krx_api(ds_nodash):
     return json.dumps(all_items)
 
 
-def get_data_from_branch(task_instance):
-    branch_result = task_instance.xcom_pull(task_ids="branch_api")
-
-    if branch_result not in ["fetch_etf_krx_web", "fetch_etf_krx_api"]:
-        raise ValueError(f"Unexpected branch result: {branch_result}")
-
-    return task_instance.xcom_pull(task_ids=branch_result)
-
-
 default_args = {
     "owner": "j-eum",
-    "retries": 24,
+    "retries": 5,
     "retry_delay": timedelta(hours=1),
 }
 
@@ -144,7 +142,7 @@ with DAG(
     catchup=False,
 ) as dag:
     branch_task = BranchPythonOperator(
-        task_id="branch_api",
+        task_id="branch_task",
         python_callable=choose_api_task,
     )
 
@@ -162,22 +160,16 @@ with DAG(
         python_callable=fetch_etf_data_from_krx_api,
     )
 
-    choose_data = PythonOperator(
-        task_id="choose_data",
-        python_callable=get_data_from_branch,
-        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
-    )
-
     create_object = S3CreateObjectOperator(
         task_id="create_object",
         s3_bucket=Variable.get("s3_bucket"),
         s3_key="bronze/kr_etf/date={{ ds }}/data.json",
-        data="{{ ti.xcom_pull(task_ids='choose_data') }}",
+        data="{{ ti.xcom_pull(task_ids=task_instance.xcom_pull(task_ids='branch_api')) }}",
         replace=True,
         aws_conn_id="aws_conn_id",
+        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
 
     branch_task >> [skip_task, fetch_etf_krx_web, fetch_etf_krx_api]
-    fetch_etf_krx_web >> choose_data
-    fetch_etf_krx_api >> choose_data
-    choose_data >> create_object
+    fetch_etf_krx_web >> create_object
+    fetch_etf_krx_api >> create_object
