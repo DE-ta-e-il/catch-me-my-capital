@@ -8,11 +8,9 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-from plugins.bronze.pyops_industry_codes import (
-    crawl_industry_codes,
-    fetch_industry_codes,
-    upload_to_s3,
-)
+import plugins.bronze.constants as C
+from plugins.bronze.pyops_extractors import crawl_industry_codes, fetch_industry_codes
+from plugins.bronze.pyops_uploaders import upload_codes_to_s3
 
 with DAG(
     dag_id="brz_industry_code_month",
@@ -25,10 +23,7 @@ with DAG(
     max_active_tasks=1,
 ) as dag:
     with TaskGroup("kospi_kosdaq_codes_task_group") as kospi_kosdaq_group:
-        markets = {
-            "kospi": ["MDC0201020101", "STK"],
-            "kosdaq": ["MDC0201020506", "KSQ"],
-        }
+        markets = C.MARKETS
 
         previous = None
         for market, codes in markets.items():
@@ -40,7 +35,7 @@ with DAG(
 
             uploader = PythonOperator(
                 task_id=f"upload_{market}_codes",
-                python_callable=upload_to_s3,
+                python_callable=upload_codes_to_s3,
                 op_args=[market],
             )
             # inner dependency
@@ -57,7 +52,7 @@ with DAG(
 
     gics_uploader = PythonOperator(
         task_id="upload_gics_codes",
-        python_callable=upload_to_s3,
+        python_callable=upload_codes_to_s3,
         op_args=["gics"],
     )
 
