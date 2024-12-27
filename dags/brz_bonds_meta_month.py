@@ -148,12 +148,12 @@ def get_meta_data(category, bond_name, **ctxt):
             content = cols[1].text.strip()
             data[header] = data.get(header, content)
 
-    ds_year, ds_month = "{{ ds }}"[:4], "{{ ds }}"[5:7]
+    ds_year, ds_month, ds_day = "{{ ds }}"[:4], "{{ ds }}"[5:7], "{{ ds }}"[8:10]
     upload = S3CreateObjectOperator(
         task_id=f"upload_{bond_name}",
         aws_conn_id="aws_conn_id",
         s3_bucket=S3_BUCKET,
-        s3_key=f"bronze/{category}/kind={bond_name}/year={ds_year}/month={ds_month}/{category}_{bond_name}_meta_{ds_year}-{ds_month}.json",
+        s3_key=f"bronze/{category}/kind={bond_name}/date={ds_year}-{ds_month}-{ds_day}/{category}_{bond_name}_meta_{ds_year}-{ds_month}.json",
         data=json.dumps(data),
         replace=True,
     )

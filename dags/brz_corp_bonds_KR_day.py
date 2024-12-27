@@ -108,7 +108,7 @@ def get_corp_bond_data_kr(target, **ctxt):
                 task_id=f"kr_corp_bond_first_time_{date}",
                 aws_conn_id="aws_conn_id",
                 s3_bucket=S3_BUCKET,
-                s3_key=f"bronze/corp_bonds_kr/kind={target}/year={date[:4]}/month={date[5:7]}/day={date[8:10]}/{target}_{date}.json",
+                s3_key=f"bronze/corp_bonds_kr/kind={target}/date={date[:4]}-{date[5:7]}-{date[8:10]}/{target}_{date}.json",
                 data=json.dumps(daily_list),
                 replace=True,
             )
@@ -121,7 +121,7 @@ def get_corp_bond_data_kr(target, **ctxt):
             task_id=f"upload_{target}",
             aws_conn_id="aws_conn_id",
             s3_bucket=S3_BUCKET,
-            s3_key=f"bronze/corp_bonds_kr/kind={target}/year={ds_year}/month={ds_month}/day={ds_day}/{target}_{ds_year}-{ds_month}-{ds_day}.json",
+            s3_key=f"bronze/corp_bonds_kr/kind={target}/date={ds_year}-{ds_month}-{ds_day}/{target}_{ds_year}-{ds_month}-{ds_day}.json",
             data=json.dumps(response.json()),
             replace=True,
         )
