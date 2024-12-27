@@ -4,7 +4,7 @@ from typing import List
 
 import pendulum
 from airflow import DAG
-from airflow.models import TaskInstance, Variable
+from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from constants import Interval, Layer, Owner
@@ -101,14 +101,12 @@ with DAG(
 
             logging.info(f"Uploaded to s3://{S3_BUCKET}/{s3_key_landing}")
 
-        return s3_key_landing
-
-    def _validate_data(ti: TaskInstance) -> None:
+    def _validate_data(execution_date: pendulum.DateTime) -> None:
         """
         임시 저장소에 저장된 데이터에 대한 기초적인 검증을 수행합니다.
 
         Args:
-            ti (TaskInstance): Airflow의 TaskInstance 객체. XCom에서 S3 키를 가져오기 위해 사용합니다.
+            execution_date (pendulum.DateTime): 데이터 수집 기준 날짜
 
         Raises:
             FileNotFoundError: 임시 저장소에 검증을 수행하려는 파일이 없는 경우 발생
@@ -122,7 +120,9 @@ with DAG(
 
         import pandas as pd
 
-        s3_key_landing = ti.xcom_pull(task_ids="ingest_data_to_s3_landing")
+        s3_key_landing = _generate_s3_key(
+            Layer.LANDING, execution_date.strftime("%Y-%m-%d")
+        )
         s3_hook = S3Hook(aws_conn_id="aws_conn_id")
         s3_obj = s3_hook.get_key(s3_key_landing, S3_BUCKET)
 
@@ -147,14 +147,11 @@ with DAG(
 
         logging.info(f"Passed validation: shape={df.shape}")
 
-    def _upload_data_to_s3_bronze(
-        ti: TaskInstance, execution_date: pendulum.DateTime
-    ) -> None:
+    def _upload_data_to_s3_bronze(execution_date: pendulum.DateTime) -> None:
         """
         임시 저장소에 저장된 데이터를 실제 저장소(S3의 bronze 레이어)로 이동합니다.
 
         Args:
-            ti (TaskInstance): Airflow의 TaskInstance 객체. XCom에서 S3 키를 가져오기 위해 사용합니다.
             execution_date (pendulum.DateTime): 데이터 수집 기준 날짜
 
         Raises:
@@ -165,7 +162,9 @@ with DAG(
         """
 
         s3_hook = S3Hook(aws_conn_id="aws_conn_id")
-        s3_key_landing = ti.xcom_pull(task_ids="ingest_data_to_s3_landing")
+        s3_key_landing = _generate_s3_key(
+            Layer.LANDING, execution_date.strftime("%Y-%m-%d")
+        )
         s3_key_bronze = _generate_s3_key(
             Layer.BRONZE, execution_date.strftime("%Y-%m-%d")
         )
