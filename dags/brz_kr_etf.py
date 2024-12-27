@@ -1,17 +1,47 @@
 import json
+import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 
 import requests
 from airflow import DAG
 from airflow.models import Variable
+from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.providers.amazon.aws.operators.s3 import S3CreateObjectOperator
 from airflow.utils.trigger_rule import TriggerRule
 
 
-def choose_api_task(ds):
+def _is_holiday_today(year, month, today):
+    url = (
+        "http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo"
+    )
+    params = {
+        "solYear": year,
+        "solMonth": month,
+        "serviceKey": Variable.get("data_kr_service_key"),
+    }
+
+    response = requests.get(url, params=params)
+    root = ET.fromstring(response.text)
+    # 모든 <locdate> 태그의 값 추출
+    locdates = [item.text for item in root.findall(".//locdate")]
+
+    # today와 일치하는 값이 있는지 확인
+    if today in locdates:
+        return True
+    else:
+        return False
+
+
+def choose_api_task(ds_nodash):
+    date = datetime.strptime(ds_nodash, "%Y%m%d")
+    year = date.year
+    month = date.strftime("%m")
+    if _is_holiday_today(year, month, ds_nodash):
+        return "skip_task"
+
     cutoff_date = datetime(2020, 1, 1)
-    if datetime.strptime(ds, "%Y-%m-%d") < cutoff_date:
+    if date < cutoff_date:
         return "fetch_etf_krx_web"
     else:
         return "fetch_etf_krx_api"
@@ -118,6 +148,10 @@ with DAG(
         python_callable=choose_api_task,
     )
 
+    skip_task = DummyOperator(
+        task_id="skip_task",
+    )
+
     fetch_etf_krx_web = PythonOperator(
         task_id="fetch_etf_krx_web",
         python_callable=fetch_old_etf_data_from_krx_web,
@@ -131,22 +165,19 @@ with DAG(
     choose_data = PythonOperator(
         task_id="choose_data",
         python_callable=get_data_from_branch,
-        trigger_rule=TriggerRule.NONE_FAILED,
+        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
 
     create_object = S3CreateObjectOperator(
         task_id="create_object",
         s3_bucket=Variable.get("s3_bucket"),
-        s3_key="test-jm/bronze/kr_etf/date={{ ds }}/data.json",
+        s3_key="bronze/kr_etf/date={{ ds }}/data.json",
         data="{{ ti.xcom_pull(task_ids='choose_data') }}",
         replace=True,
         aws_conn_id="aws_conn_id",
-        trigger_rule=TriggerRule.NONE_FAILED,
     )
 
-    (
-        branch_task
-        >> [fetch_etf_krx_web, fetch_etf_krx_api]
-        >> choose_data
-        >> create_object
-    )
+    branch_task >> [skip_task, fetch_etf_krx_web, fetch_etf_krx_api]
+    fetch_etf_krx_web >> choose_data
+    fetch_etf_krx_api >> choose_data
+    choose_data >> create_object
