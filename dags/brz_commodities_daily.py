@@ -28,14 +28,35 @@ with DAG(
     S3_BUCKET = Variable.get("s3_bucket")
 
     def _generate_s3_key(layer: str, date: str) -> str:
-        """데이터를 저장하기 위한 S3 키 값을 생성하는 함수"""
+        """
+        S3에 데이터를 저장하기 위한 키를 생성합니다.
+
+        Args:
+            layer (str): S3의 레이어를 나타내는 문자열 (예: "bronze", "silver")
+            date (str): 데이터의 날짜를 나타내는 문자열 (형식: YYYY-MM-DD)
+
+        Returns:
+            str: S3 키 경로
+        """
 
         return f"{layer}/commodities/date={date}/data.csv"
 
     def _ingest_data_to_s3_landing(
         ticker_list: List[str], execution_date: pendulum.DateTime
     ) -> None:
-        """yfinance로부터 데이터를 수집하고, 임시 저장소(S3 landing)에 저장"""
+        """
+        yfinance를 사용하여 가격 데이터를 수집하고, 임시 저장소(S3의 landing 레이어)에 저장합니다.
+
+        Args:
+            ticker_list (List[str]): 데이터를 수집할 종목 코드(티커) 리스트)
+            execution_date (pendulum.DateTime): 데이터 수집 기준 날짜
+
+        Raises:
+            AirflowSkipException: 지정한 날짜 범위에 데이터가 없는 경우 발생
+
+        Returns:
+            None
+        """
 
         import tempfile
         from os import path
@@ -79,7 +100,19 @@ with DAG(
         return s3_key_landing
 
     def _validate_data(ti: TaskInstance) -> None:
-        """임시 저장소(S3 landing)에 저장된 데이터에 대한 기본적인 검증"""
+        """
+        임시 저장소에 저장된 데이터에 대한 기초적인 검증을 수행합니다.
+
+        Args:
+            ti (TaskInstance): Airflow의 TaskInstance 객체. XCom에서 S3 키를 가져오기 위해 사용합니다.
+
+        Raises:
+            FileNotFoundError: 임시 저장소에 검증을 수행하려는 파일이 없는 경우 발생
+            ValueError: 파일에 데이터가 없거나, 필수 컬럼이 누락된 경우 발생
+
+        Returns:
+            None
+        """
 
         from io import StringIO
 
@@ -113,7 +146,19 @@ with DAG(
     def _upload_data_to_s3_bronze(
         ti: TaskInstance, execution_date: pendulum.DateTime
     ) -> None:
-        """임시 저장소(S3 landing)에 저장된 데이터를 타깃 저장소(S3 bronze)로 이동"""
+        """
+        임시 저장소에 저장된 데이터를 실제 저장소(S3의 bronze 레이어)로 이동합니다.
+
+        Args:
+            ti (TaskInstance): Airflow의 TaskInstance 객체. XCom에서 S3 키를 가져오기 위해 사용합니다.
+            execution_date (pendulum.DateTime): 데이터 수집 기준 날짜
+
+        Raises:
+            Exception: S3에서 파일 복사 중 실패한 경우 발생
+
+        Returns:
+            None
+        """
 
         s3_hook = S3Hook(aws_conn_id="aws_conn_id")
         s3_key_landing = ti.xcom_pull(task_ids="ingest_data_to_s3_landing")
