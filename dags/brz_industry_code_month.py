@@ -66,12 +66,12 @@ def kospi_industry_codes(**ctxt):
     ctxt["ti"].xcom_push(key="kospi", value=new_items)
 
     # Upload
-    ds_year, ds_month = "{{ ds[:4] }}", "{{ ds[5:7] }}"
+    ds_year, ds_month, ds_day = "{{ ds }}"[:4], "{{ ds }}"[5:7], "{{ ds }}"[8:10]
     upload_kospi = S3CreateObjectOperator(
         task_id="upload_kospi",
         aws_conn_id="aws_conn_id",
         s3_bucket=S3_BUCKET,
-        s3_key=f"bronze/industry_code/year={ds_year}/month={ds_month}/kospi_codes_{ds_year}-{ds_month}.json",
+        s3_key=f"bronze/industry_code/date={ds_year}-{ds_month}-{ds_day}/kospi_codes_{ds_year}-{ds_month}.json",
         data=f"{new_items}",
         replace=True,
     )
@@ -126,12 +126,12 @@ def kosdaq_industry_codes(**ctxt):
         raise Exception("NOPE NOT GETTING ANY")
 
     # Upload
-    ds_year, ds_month = "{{ ds[:4] }}", "{{ ds[5:7] }}"
+    ds_year, ds_month, ds_day = "{{ ds }}"[:4], "{{ ds }}"[5:7], "{{ ds }}"[8:10]
     upload_kosdaq = S3CreateObjectOperator(
         task_id="upload_kosdaq",
         aws_conn_id="aws_conn_id",
         s3_bucket=S3_BUCKET,
-        s3_key=f"bronze/industry_code/year={ds_year}/month={ds_month}/kosdaq_codes_{ds_year}-{ds_month}.json",
+        s3_key=f"bronze/industry_code/date={ds_year}-{ds_month}-{ds_day}/kosdaq_codes_{ds_year}-{ds_month}.json",
         data=f"{new_items}",
         replace=True,
     )
@@ -170,12 +170,12 @@ def gics_industry_codes(**ctxt):
                 sub_industry[target] = sub_industry.get(target, name)
 
     # Upload
-    ds_year, ds_month = "{{ ds[:4] }}", "{{ ds[5:7] }}"
+    ds_year, ds_month, ds_day = "{{ ds }}"[:4], "{{ ds }}"[5:7], "{{ ds }}"[8:10]
     upload_gics = S3CreateObjectOperator(
         task_id="upload_gics",
         aws_conn_id="aws_conn_id",
         s3_bucket=S3_BUCKET,
-        s3_key=f"bronze/industry_code/year={ds_year}/month={ds_month}/gics_codes_{ds_year}-{ds_month}.json",
+        s3_key=f"bronze/industry_code/date={ds_year}-{ds_month}-{ds_day}/gics_codes_{ds_year}-{ds_month}.json",
         data=f"{[sectors, industry_group, industry, sub_industry]}",
         replace=True,
     )
