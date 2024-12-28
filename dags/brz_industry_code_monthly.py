@@ -5,12 +5,13 @@
 from datetime import datetime
 
 from airflow import DAG
+from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-import plugins.bronze.constants as C
-from plugins.bronze.pyops_extractors import crawl_industry_codes, fetch_industry_codes
-from plugins.bronze.pyops_uploaders import upload_codes_to_s3
+from plugins.bronze.constants import MARKETS
+from plugins.bronze.extractors import crawl_industry_codes, fetch_industry_codes
+from plugins.bronze.uploaders import upload_codes_to_s3
 
 with DAG(
     dag_id="brz_industry_code_month",
@@ -20,13 +21,16 @@ with DAG(
     tags=["bronze"],
     description="A DAG that fetches industry(sector) codes for stocks.",
     default_args={"retries": 0, "trigger_rule": "all_success", "owner": "dee"},
-    max_active_tasks=1,
+    max_active_tasks=3,
 ) as dag:
     with TaskGroup("kospi_kosdaq_codes_task_group") as kospi_kosdaq_group:
-        markets = C.MARKETS
+        markets = MARKETS
 
-        previous = None
+        # previous = None # Pairs are not dependant anymore
         for market, codes in markets.items():
+            start_of_task_pair = DummyOperator(task_id=f"start_of_task_pair_{market}")
+            end_of_task_pair = DummyOperator(task_id=f"end_of_task_pair_{market}")
+
             codes_fetcher = PythonOperator(
                 task_id=f"{market}_industry_codes",
                 python_callable=fetch_industry_codes,
@@ -38,12 +42,13 @@ with DAG(
                 python_callable=upload_codes_to_s3,
                 op_args=[market],
             )
-            # inner dependency
-            codes_fetcher >> uploader
 
-            if previous:
-                previous >> codes_fetcher
-            previous = uploader
+            # Pairs will run parallel
+            start_of_task_pair >> codes_fetcher >> uploader >> end_of_task_pair
+
+            # if previous: # Pairs are not dependant anymore
+            #     previous >> codes_fetcher
+            # previous = uploader
 
     gics_codes_fetcher = PythonOperator(
         task_id="gics_industry_codes",
@@ -56,4 +61,6 @@ with DAG(
         op_args=["gics"],
     )
 
-    kospi_kosdaq_group >> gics_codes_fetcher >> gics_uploader
+    # Max active tasks needed = 3 😨 I have faith in my rig!
+    kospi_kosdaq_group
+    gics_codes_fetcher >> gics_uploader

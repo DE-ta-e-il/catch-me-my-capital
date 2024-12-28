@@ -8,7 +8,7 @@ from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from bs4 import BeautifulSoup
 
 import plugins.bronze.constants as C
-from plugins.bronze.pyops_uploaders import (
+from plugins.bronze.uploaders import (
     upload_bonds_metadata_to_s3,
     upload_bonds_to_s3,
 )
