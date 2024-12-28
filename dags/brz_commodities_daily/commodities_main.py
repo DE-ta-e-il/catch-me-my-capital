@@ -7,7 +7,7 @@ from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from constants import Interval, Layer, Owner
+from common.constants import Interval, Layer, Owner
 
 default_args = {
     "owner": Owner.DAMI,
