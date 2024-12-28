@@ -6,9 +6,8 @@ from datetime import datetime, timedelta
 import requests
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from bs4 import BeautifulSoup
-
-from plugins.bronze.constants import FIRST_RUN, S3_BUCKET, START_DATE
-from plugins.bronze.uploaders import (
+from constants import FIRST_RUN, S3_BUCKET, START_DATE
+from uploaders import (
     upload_bonds_metadata_to_s3,
     upload_bonds_to_s3,
 )

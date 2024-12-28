@@ -1,8 +1,7 @@
 import json
 
+import constants as C
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-
-import plugins.bronze.constants as C
 
 
 # Industry code uploader

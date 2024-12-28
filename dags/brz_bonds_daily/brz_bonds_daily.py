@@ -1,9 +1,8 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
-
-from plugins.bronze.constants import FIRST_RUN, START_DATE, URLS_DICT
-from plugins.bronze.extractors import generate_urls, get_bond_data
+from common.constants import FIRST_RUN, START_DATE, URLS_DICT
+from common.extractors import generate_urls, get_bond_data
 
 with DAG(
     dag_id="brz_bonds_day",

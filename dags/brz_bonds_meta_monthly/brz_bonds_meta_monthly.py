@@ -3,9 +3,8 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
-
-from plugins.bronze.constants import START_DATE
-from plugins.bronze.extractors import get_categories, get_metadata
+from common.constants import START_DATE
+from common.extractors import get_categories, get_metadata
 
 with DAG(
     dag_id="brz_govt_bonds_meta_month",
