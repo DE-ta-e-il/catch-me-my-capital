@@ -8,9 +8,9 @@ from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
-from constants import MARKETS
-from extractors import crawl_industry_codes, fetch_industry_codes
-from uploaders import upload_codes_to_s3
+from common.constants import MARKETS
+from common.extractors import crawl_industry_codes, fetch_industry_codes
+from common.uploaders import upload_codes_to_s3
 
 with DAG(
     dag_id="brz_industry_code_month",
