@@ -2,14 +2,14 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-import plugins.bronze.constants as C
-from plugins.bronze.pyops_extractors import generate_urls, get_bond_data
+from plugins.bronze.constants import FIRST_RUN, START_DATE, URLS_DICT
+from plugins.bronze.extractors import generate_urls, get_bond_data
 
 with DAG(
     dag_id="brz_bonds_day",
-    start_date=C.START_DATE,
+    start_date=START_DATE,
     schedule_interval="0 0 * * *",
-    catchup=not C.FIRST_RUN,
+    catchup=not FIRST_RUN,
     default_args={
         "retries": 0,
         "trigger_rule": "all_success",
@@ -26,20 +26,14 @@ with DAG(
         provide_context=True,
     )
 
-    # bond_kind tasks can parallelize
     with TaskGroup(group_id="api_caller_group") as api_caller_group:
-        prev_task = None
-        id = 0
-        for bond_kind in C.URLS_DICT:
-            curr_task = PythonOperator(
-                task_id=f"fetch_{bond_kind}_{id}",
+        for bond_kind in URLS_DICT:
+            get_corresponding_bond_data = PythonOperator(
+                task_id=f"fetch_{bond_kind}",
                 python_callable=get_bond_data,
                 provide_context=True,
                 op_args=[bond_kind],
             )
-            if prev_task:
-                prev_task >> curr_task
-            prev_task = curr_task
-            id += 1
+            get_corresponding_bond_data
 
     url_generator >> api_caller_group
