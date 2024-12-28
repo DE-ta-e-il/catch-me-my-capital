@@ -6,9 +6,8 @@ from datetime import datetime, timedelta
 import requests
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from bs4 import BeautifulSoup
-
-import plugins.bronze.constants as C
-from plugins.bronze.uploaders import (
+from constants import FIRST_RUN, S3_BUCKET, START_DATE
+from uploaders import (
     upload_bonds_metadata_to_s3,
     upload_bonds_to_s3,
 )
@@ -19,14 +18,14 @@ def generate_urls(**ctxt):
     # Hooks, too, must be wrapped in here...
     # Get the urls file
     s3 = S3Hook(aws_conn_id="aws_conn_id")
-    file = s3.read_key(key="data/urls_bonds.json", bucket_name=C.S3_BUCKET)
+    file = s3.read_key(key="data/urls_bonds.json", bucket_name=S3_BUCKET)
     urls_dict = json.loads(file)
 
     # Date range for the url query strings
     ds = ctxt["ds"]
     d_range = (
-        (datetime(2015, 1, 1), C.START_DATE)
-        if C.FIRST_RUN
+        (datetime(2015, 1, 1), START_DATE)
+        if FIRST_RUN
         else (
             (datetime.strptime(ds, "%Y-%m-%d") - timedelta(days=1)).replace(
                 hour=0, minute=0, second=0, microsecond=0
@@ -67,7 +66,7 @@ def get_bond_data(bond_kind, **ctxt):
         # If this is the first run,
         # unravel 10-years-worth of data
         # and save them as smaller partitions
-        if C.FIRST_RUN:
+        if FIRST_RUN:
             # gbd: Short for grouped-by-day
             gbd = defaultdict(list)
             for rec in response.json():
@@ -180,7 +179,7 @@ def crawl_industry_codes(**ctxt):
 # Fetches urls data and returns category name and bond name
 def get_categories():
     s3 = S3Hook(aws_conn_id="aws_conn_id")
-    file = s3.read_key(key="data/urls_bonds.json", bucket_name=C.S3_BUCKET)
+    file = s3.read_key(key="data/urls_bonds.json", bucket_name=S3_BUCKET)
     res = json.loads(file)
     titles = {category: [bond_name for bond_name in res[category]] for category in res}
     return titles
@@ -190,7 +189,7 @@ def get_categories():
 def get_metadata(category, bond_name, **ctxt):
     # Fetch the urls file
     s3 = S3Hook(aws_conn_id="aws_conn_id")
-    file = s3.read_key(key="data/urls_bonds.json", bucket_name=C.S3_BUCKET)
+    file = s3.read_key(key="data/urls_bonds.json", bucket_name=S3_BUCKET)
     urls_dict = json.loads(file)
 
     # Bonds meta data crawling
