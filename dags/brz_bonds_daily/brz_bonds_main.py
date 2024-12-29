@@ -1,11 +1,12 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
-from common.constants import FIRST_RUN, START_DATE, URLS_DICT
-from common.extractors import generate_urls, get_bond_data
+
+from brz_bonds_daily.brz_bonds_constants import FIRST_RUN, START_DATE, URLS_DICT
+from brz_bonds_daily.brz_bonds_extractors import generate_urls, get_bond_data
 
 with DAG(
-    dag_id="brz_bonds_day",
+    dag_id="brz_bonds_daily",
     start_date=START_DATE,
     schedule_interval="0 0 * * *",
     catchup=not FIRST_RUN,

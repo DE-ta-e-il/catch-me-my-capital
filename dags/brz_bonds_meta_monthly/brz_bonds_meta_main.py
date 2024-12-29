@@ -3,11 +3,15 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
-from common.constants import START_DATE
-from common.extractors import get_categories, get_metadata
+
+from brz_bonds_meta_monthly.brz_bonds_meta_constants import START_DATE
+from brz_bonds_meta_monthly.brz_bonds_meta_extractors import (
+    get_categories,
+    get_metadata,
+)
 
 with DAG(
-    dag_id="brz_govt_bonds_meta_month",
+    dag_id="brz_govt_bonds_meta_monthly",
     start_date=START_DATE,
     schedule_interval="0 0 1 * *",
     catchup=False,
