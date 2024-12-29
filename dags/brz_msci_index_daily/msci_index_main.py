@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from common.constants import Interval, Layer, Owner
 from common.uploaders import upload_file_to_s3
 
 from brz_msci_index_daily.msci_index_constants import (
@@ -10,7 +11,6 @@ from brz_msci_index_daily.msci_index_constants import (
     MSCI_URL_INFO,
 )
 from brz_msci_index_daily.msci_index_extractors import fetch_msci_indices_data
-from dags.common.constants import Interval, Layer, Owner
 
 with DAG(
     dag_id="brz_msci_index_daily",

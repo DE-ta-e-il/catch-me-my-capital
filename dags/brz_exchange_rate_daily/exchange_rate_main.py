@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from common.constants import Interval, Layer, Owner
 from common.uploaders import upload_file_to_s3
 
 from brz_exchange_rate_daily.exchange_rate_constants import (
@@ -10,7 +11,6 @@ from brz_exchange_rate_daily.exchange_rate_constants import (
     EXCHANGE_RATE_TMP_FILE_PATH,
 )
 from brz_exchange_rate_daily.exchange_rate_extractors import fetch_exchange_rates
-from dags.common.constants import Interval, Layer, Owner
 
 with DAG(
     dag_id="brz_exchange_rate_daily",
