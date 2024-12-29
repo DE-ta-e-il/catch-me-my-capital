@@ -1,9 +1,15 @@
 import logging
+import tempfile
 from datetime import timedelta
+from io import StringIO
+from os import path
 from typing import List
 
+import pandas as pd
 import pendulum
+import yfinance as yf
 from airflow import DAG
+from airflow.exceptions import AirflowSkipException
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
@@ -63,12 +69,6 @@ with DAG(
             None
         """
 
-        import tempfile
-        from os import path
-
-        import yfinance as yf
-        from airflow.exceptions import AirflowSkipException
-
         start_date = execution_date.strftime("%Y-%m-%d")
         end_date = (execution_date + timedelta(days=1)).strftime("%Y-%m-%d")
         s3_key_landing = _generate_s3_key(Layer.LANDING, start_date)
@@ -116,10 +116,6 @@ with DAG(
         Returns:
             None
         """
-
-        from io import StringIO
-
-        import pandas as pd
 
         s3_key_landing = _generate_s3_key(
             Layer.LANDING, execution_date.strftime("%Y-%m-%d")
