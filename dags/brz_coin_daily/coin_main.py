@@ -2,11 +2,11 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from common.constant import Interval, Layer, Owner
 from common.uploaders import upload_file_to_s3
 
 from brz_coin_daily.coin_constants import COIN_DATA_S3_KEY, COIN_TMP_FILE_PATH, SYMBOLS
 from brz_coin_daily.coin_extractors import fetch_coin_data
+from dags.common.constants import Interval, Layer, Owner
 
 with DAG(
     dag_id="brz_coin_daily",

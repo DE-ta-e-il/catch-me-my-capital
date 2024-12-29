@@ -1,7 +1,5 @@
 from enum import StrEnum
 
-from airflow.models import Variable
-
 
 class Interval(StrEnum):
     DAILY = "daily"
@@ -20,6 +18,3 @@ class Layer(StrEnum):
     SILVER = "silver"
     GOLD = "gold"
     LANDING = "landing"
-
-
-S3_BUCKET = Variable.get("S3_BUCKET")
