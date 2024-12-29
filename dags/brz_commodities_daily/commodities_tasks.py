@@ -58,9 +58,7 @@ class CommoditiesPipeline:
         """
         self.logger.info("Start running validation.")
 
-        missing_columns = [
-            col for col in self.REQUIRED_COLUMNS if col not in data.columns
-        ]
+        missing_columns = set(self.REQUIRED_COLUMNS) - set(data.columns)
 
         if missing_columns:
             raise ValueError(
