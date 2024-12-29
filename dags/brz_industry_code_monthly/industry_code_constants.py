@@ -11,7 +11,6 @@ START_DATE = (datetime.now() - timedelta(days=1)).replace(
 # Get urls parameters
 # I really wanted to avoid hardcoding it ...
 # TODO: A pre-crawler DAG for the urls ?
-URLS_DICT = ["govt_bonds_kr", "govt_bonds_us", "corp_bonds_kr", "corp_bonds_us"]
 MARKETS = {
     "kospi": ["MDC0201020101", "STK"],
     "kosdaq": ["MDC0201020506", "KSQ"],
