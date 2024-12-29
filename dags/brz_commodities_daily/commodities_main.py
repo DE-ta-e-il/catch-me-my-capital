@@ -15,7 +15,7 @@ default_args = {
     "retry_delay": timedelta(minutes=3),
 }
 
-# NOTE: 티커 목록(TICKER_LIST)에 대한 설명
+# NOTE: 가격 데이터를 수집할 종목 코드(티커)에 대한 설명
 # - "CL=F": 원유(WTI) 선물
 # - "BZ=F": 원유(브렌트유) 선물
 # - "GC=F": 금 선물
