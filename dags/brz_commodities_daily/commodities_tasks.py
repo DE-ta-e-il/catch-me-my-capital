@@ -98,8 +98,8 @@ class CommoditiesPipeline:
         """
         self.logger.info("Start running pipeline")
 
-        start_date = context["data_interval_start"].strftime("%Y-%m-%d")
-        end_date = context["data_interval_end"].strftime("%Y-%m-%d")
+        start_date = context["data_interval_start"].date()
+        end_date = context["data_interval_end"].date()
 
         s3_key = self.S3_KEY_TEMPLATE.format(layer=Layer.BRONZE, date=start_date)
 
