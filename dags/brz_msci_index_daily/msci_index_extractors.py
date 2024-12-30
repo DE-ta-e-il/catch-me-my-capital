@@ -1,11 +1,14 @@
 import calendar
-import csv
+import json
 from datetime import timedelta
 
 import requests
+from common.uploaders import upload_file_to_s3
 
 
-def fetch_msci_indices_data(msci_url_info, msci_index_tmp_file_path, **kwargs):
+def fetch_msci_indices_data(
+    msci_url_info, msci_index_tmp_file_path, msci_index_data_s3_key, **kwargs
+):
     """
     MSCI World Index, MSCI Emerging Market Index 데이터 수집 함수
     """
@@ -37,8 +40,12 @@ def fetch_msci_indices_data(msci_url_info, msci_index_tmp_file_path, **kwargs):
                 f"Failed to fetch data for {index_name}: {response.status_code}"
             )
 
-    # CSV 포맷으로 저장
-    with open(msci_index_tmp_file_path, "w") as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=all_data[0].keys(), delimiter=",")
-        writer.writeheader()
-        writer.writerows(all_data)
+    # JSON 포맷으로 저장
+    with open(msci_index_tmp_file_path, "w") as jsonfile:
+        json.dump(all_data, jsonfile)
+
+    # S3에 업로드
+    upload_file_to_s3(
+        key=msci_index_data_s3_key,
+        file_path=msci_index_tmp_file_path,
+    )

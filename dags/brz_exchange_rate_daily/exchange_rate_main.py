@@ -3,14 +3,13 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from common.constants import Interval, Layer, Owner
-from common.uploaders import upload_file_to_s3
 
-from brz_exchange_rate_daily.exchange_rate_constants import (
+from brz_exchange_rate_daily import (
     CURRENCY_PAIRS,
     EXCHANGE_RATE_DATA_S3_KEY,
     EXCHANGE_RATE_TMP_FILE_PATH,
+    fetch_exchange_rates,
 )
-from brz_exchange_rate_daily.exchange_rate_extractors import fetch_exchange_rates
 
 with DAG(
     dag_id="brz_exchange_rate_daily",
@@ -31,18 +30,9 @@ with DAG(
         op_kwargs={
             "currency_pairs": CURRENCY_PAIRS,
             "exchange_rate_tmp_file_path": EXCHANGE_RATE_TMP_FILE_PATH,
+            "exchange_rate_data_s3_key": EXCHANGE_RATE_DATA_S3_KEY,
         },
         provide_context=True,
     )
 
-    upload_exchange_rates_to_s3_task = PythonOperator(
-        task_id="upload_exchange_rates_to_s3",
-        python_callable=upload_file_to_s3,
-        provide_context=True,
-        op_kwargs={
-            "file_path": EXCHANGE_RATE_TMP_FILE_PATH,
-            "key": EXCHANGE_RATE_DATA_S3_KEY,
-        },
-    )
-
-    fetch_exchange_rates_task >> upload_exchange_rates_to_s3_task
+    fetch_exchange_rates_task

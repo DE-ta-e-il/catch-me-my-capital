@@ -3,10 +3,13 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from common.constants import Interval, Layer, Owner
-from common.uploaders import upload_file_to_s3
 
-from brz_coin_daily.coin_constants import COIN_DATA_S3_KEY, COIN_TMP_FILE_PATH, SYMBOLS
-from brz_coin_daily.coin_extractors import fetch_coin_data
+from brz_coin_daily import (
+    COIN_DATA_S3_KEY,
+    COIN_TMP_FILE_PATH,
+    SYMBOLS,
+    fetch_coin_data,
+)
 
 with DAG(
     dag_id="brz_coin_daily",
@@ -27,18 +30,9 @@ with DAG(
         op_kwargs={
             "symbols": SYMBOLS,
             "coin_tmp_file_path": COIN_TMP_FILE_PATH,
+            "coin_data_s3_key": COIN_DATA_S3_KEY,
         },
         provide_context=True,
     )
 
-    upload_coin_data_to_s3_task = PythonOperator(
-        task_id="upload_coin_data_to_s3",
-        python_callable=upload_file_to_s3,
-        provide_context=True,
-        op_kwargs={
-            "file_path": COIN_TMP_FILE_PATH,
-            "key": COIN_DATA_S3_KEY,
-        },
-    )
-
-    fetch_coin_data_task >> upload_coin_data_to_s3_task
+    fetch_coin_data_task

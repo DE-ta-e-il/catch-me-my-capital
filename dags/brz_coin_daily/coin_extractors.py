@@ -1,9 +1,10 @@
 import csv
 
 import requests
+from common.uploaders import upload_file_to_s3
 
 
-def fetch_coin_data(symbols, coin_tmp_file_path, **kwargs):
+def fetch_coin_data(symbols, coin_tmp_file_path, coin_data_s3_key, **kwargs):
     """
     Binance API를 통해 코인 데이터를 수집하는 함수
     """
@@ -59,3 +60,9 @@ def fetch_coin_data(symbols, coin_tmp_file_path, **kwargs):
             writer.writerows(all_data)
     else:
         raise Exception("No data fetched.")
+
+    # S3에 업로드
+    upload_file_to_s3(
+        key=coin_data_s3_key,
+        file_path=coin_tmp_file_path,
+    )

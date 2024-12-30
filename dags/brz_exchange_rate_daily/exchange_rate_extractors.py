@@ -1,9 +1,12 @@
 from datetime import timedelta
 
 import yfinance as yf
+from common.uploaders import upload_file_to_s3
 
 
-def fetch_exchange_rates(currency_pairs, exchange_rate_tmp_file_path, **kwargs):
+def fetch_exchange_rates(
+    currency_pairs, exchange_rate_tmp_file_path, exchange_rate_data_s3_key, **kwargs
+):
     """
     환율 데이터 수집 함수
     """
@@ -25,3 +28,9 @@ def fetch_exchange_rates(currency_pairs, exchange_rate_tmp_file_path, **kwargs):
 
     # CSV 포맷으로 저장
     close_data.to_csv(exchange_rate_tmp_file_path, index=False)
+
+    # S3에 업로드
+    upload_file_to_s3(
+        key=exchange_rate_data_s3_key,
+        file_path=exchange_rate_tmp_file_path,
+    )
