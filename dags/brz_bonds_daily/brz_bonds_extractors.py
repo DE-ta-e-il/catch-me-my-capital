@@ -73,10 +73,11 @@ def get_bond_data(bond_kind, **ctxt):
             if len(gbd) == 0:
                 raise Exception("Nothing was fetched")
 
-            # NOTE: Wonder if this is practical?
-            for date, daily_list in gbd.items():
-                upload_bonds_to_s3(date, target, daily_list)
+            for dt, daily_list in gbd.items():
+                key = f"bronze/{bond_kind}/kind={target}/date={dt}/{target}_{dt}.json"
+                upload_bonds_to_s3(daily_list, key)
 
         # If it's not the first rodeo, run normal operation 🔫🤠🐂
         else:
-            upload_bonds_to_s3(date, target, response.json())
+            key = f"bronze/{bond_kind}/kind={target}/date={date}/{target}_{date}.json"
+            upload_bonds_to_s3(response.json(), key)
