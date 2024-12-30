@@ -1,55 +1,18 @@
-import json
+"""
+DEPRECATED: This DAG is no longer in use as of 2020-01-01.
+It has been replaced by 'brz_kr_etf_daily', which performs the same operations.
+Please remove any references to this DAG and use 'brz_kr_etf_daily' going forward.
+"""
+
 from datetime import datetime
 
-import requests
 from airflow import DAG
 from airflow.operators.python import PythonOperator, ShortCircuitOperator
-from common.s3_utils import upload_string_to_s3
 
-from brz_kr_etf_daily.brz_kr_etf_daily_utils import (
-    generate_json_s3_key,
-    is_kr_market_open_today,
+from brz_kr_etf_daily.brz_kr_etf_daily_tasks import (
+    fetch_etf_from_krx_web_to_s3,
+    verify_market_open,
 )
-
-
-def verify_market_open(ds_nodash):
-    date = datetime.strptime(ds_nodash, "%Y%m%d")
-    return is_kr_market_open_today(date)
-
-
-def fetch_etf_from_krx_web_to_s3(ds_nodash, ds):
-    url = "http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd"
-    data = {
-        "bld": "dbms/MDC/STAT/standard/MDCSTAT04301",
-        "locale": "ko_KR",
-        "trdDd": ds_nodash,
-        "share": 1,
-        "money": 1,
-        "csvxls_isNo": False,
-    }
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.5938.132 Safari/537.36",
-        "Referer": "http://data.krx.co.kr/contents/MDC/MDI/mdiLoader/index.cmd?menuId=MDC0201020203",
-    }
-
-    response = requests.post(url, data=data, headers=headers)
-
-    if response.status_code != 200:
-        raise Exception(f"Failed to fetch API: {response.status_code}, {response.text}")
-
-    data = response.json()
-    items = data.get("output")
-
-    if not items:
-        raise Exception(
-            f"Data retrieval failed: 'output' is missing or empty. Full data: {data}"
-        )
-
-    data_str = json.dumps(items)
-    s3_key = generate_json_s3_key(ds)
-
-    upload_string_to_s3(data_str, s3_key)
-
 
 default_args = {
     "owner": "j-eum",  # TODO: 공통 ENUM적용 예정
@@ -66,7 +29,8 @@ with DAG(
     catchup=False,
 ) as dag:
     verify_market_open = ShortCircuitOperator(
-        task_id="verify_market_open", python_callable=verify_market_open
+        task_id="verify_market_open",
+        python_callable=verify_market_open,
     )
 
     fetch_etf_from_krx_web_to_s3 = PythonOperator(
