@@ -8,7 +8,7 @@ from brz_bonds_daily.brz_bonds_extractors import generate_urls, get_bond_data
 with DAG(
     dag_id="brz_bonds_daily",
     start_date=START_DATE,
-    schedule_interval="0 0 * * *",
+    schedule_interval="0 0 * * 1-5",
     catchup=not FIRST_RUN,
     default_args={
         "retries": 0,

@@ -13,7 +13,7 @@ from brz_bonds_meta_monthly.brz_bonds_meta_extractors import (
 with DAG(
     dag_id="brz_govt_bonds_meta_monthly",
     start_date=START_DATE,
-    schedule_interval="0 0 1 * *",
+    schedule_interval="0 0 1 * 1-5",
     catchup=False,
     default_args={
         "retries": 0,
