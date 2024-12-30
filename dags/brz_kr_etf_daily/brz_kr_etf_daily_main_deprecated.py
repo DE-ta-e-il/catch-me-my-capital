@@ -61,7 +61,7 @@ with DAG(
     description="한국거래소 ETF 종목별 시세",
     tags=["bronze", "ETF", "daily", "weekday"],
     schedule="0 0 * * 1-5",
-    start_date=datetime(2020, 1, 1),
+    start_date=datetime(2015, 1, 1),
     end_date=datetime(2019, 12, 31),
     catchup=False,
 ) as dag:
