@@ -19,7 +19,7 @@ from brz_industry_code_monthly.industry_code_uploaders import upload_codes_to_s3
 with DAG(
     dag_id="brz_industry_code_month",
     start_date=datetime(2024, 12, 1),
-    schedule_interval="0 0 1 * *",
+    schedule_interval="0 0 1 * 1-5",
     catchup=False,
     tags=["bronze"],
     description="A DAG that fetches industry(sector) codes for stocks.",
