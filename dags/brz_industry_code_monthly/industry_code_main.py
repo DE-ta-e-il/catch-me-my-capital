@@ -5,16 +5,14 @@
 from datetime import datetime
 
 from airflow import DAG
-from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
+from common.constants import MARKETS
 
-from brz_industry_code_monthly.industry_code_constants import MARKETS
 from brz_industry_code_monthly.industry_code_extractors import (
     crawl_industry_codes,
     fetch_industry_codes,
 )
-from brz_industry_code_monthly.industry_code_uploaders import upload_codes_to_s3
 
 with DAG(
     dag_id="brz_industry_code_month",
@@ -29,41 +27,20 @@ with DAG(
     with TaskGroup("kospi_kosdaq_codes_task_group") as kospi_kosdaq_group:
         markets = MARKETS
 
-        # previous = None # Pairs are not dependant anymore
         for market, codes in markets.items():
-            start_of_task_pair = DummyOperator(task_id=f"start_of_task_pair_{market}")
-            end_of_task_pair = DummyOperator(task_id=f"end_of_task_pair_{market}")
-
-            codes_fetcher = PythonOperator(
+            krx_codes_fetcher = PythonOperator(
                 task_id=f"{market}_industry_codes",
                 python_callable=fetch_industry_codes,
                 op_args=[market, codes[0], codes[1]],
             )
 
-            uploader = PythonOperator(
-                task_id=f"upload_{market}_codes",
-                python_callable=upload_codes_to_s3,
-                op_args=[market],
-            )
-
-            # Pairs will run parallel
-            start_of_task_pair >> codes_fetcher >> uploader >> end_of_task_pair
-
-            # if previous: # Pairs are not dependant anymore
-            #     previous >> codes_fetcher
-            # previous = uploader
+            krx_codes_fetcher
 
     gics_codes_fetcher = PythonOperator(
         task_id="gics_industry_codes",
         python_callable=crawl_industry_codes,
     )
 
-    gics_uploader = PythonOperator(
-        task_id="upload_gics_codes",
-        python_callable=upload_codes_to_s3,
-        op_args=["gics"],
-    )
-
     # Max active tasks needed = 3 😨 I have faith in my rig!
     kospi_kosdaq_group
-    gics_codes_fetcher >> gics_uploader
+    gics_codes_fetcher

@@ -1,9 +1,9 @@
-import json
 import time
 from datetime import datetime
 
 import requests
 from bs4 import BeautifulSoup
+from common.uploaders import upload_codes_to_s3
 
 
 # For KRX APIs' industry codes
@@ -11,7 +11,10 @@ def fetch_industry_codes(market, referer, mktId, **ctxt):
     """
     For KRX KOSPI and KOSDAQ industry codes but it can be expanded(NOT compatible with GICS crawling).
     """
+    # date validation
     date = ctxt["ds"]
+    date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
+
     url = "http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd"
     try:
         res = requests.post(
@@ -24,7 +27,7 @@ def fetch_industry_codes(market, referer, mktId, **ctxt):
                 "bld": "dbms/MDC/STAT/standard/MDCSTAT03901",
                 "locale": "ko_KR",
                 "mktId": mktId,
-                "trdDd": datetime.strptime(date, "%Y-%m-%d").strftime("%Y%m%d"),
+                "trdDd": date,
                 "money": 1,
                 "csvxls_isNo": "false",
             },
@@ -53,8 +56,8 @@ def fetch_industry_codes(market, referer, mktId, **ctxt):
     if len(new_items) == 0:
         raise Exception("NOPE NOT GETTING ANY")
 
-    with open(f"/tmp/{market}_industry_codes.json", "w") as file:
-        json.dump(new_items, file)
+    key = f"bronze/industry_code/date={date}/{market}_codes_{date}.json"
+    upload_codes_to_s3(new_items, key)
 
 
 # For crawling GICS
@@ -93,5 +96,5 @@ def crawl_industry_codes(**ctxt):
     date = ctxt["ds"]
     date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
 
-    with open("/tmp/gics_industry_codes.json", "w") as file:
-        json.dump([sectors, industry_group, industry, sub_industry], file)
+    key = f"bronze/industry_code/date={date}/gics_codes_{date}.json"
+    upload_codes_to_s3([sectors, industry_group, industry, sub_industry], key)
