@@ -6,7 +6,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator, ShortCircuitOperator
 from common.s3_utils import upload_string_to_s3
 
-from brz_kr_etf_daily.kr_etf_utils import (
+from brz_kr_etf_daily.brz_kr_etf_daily_utils import (
     generate_json_s3_key,
     is_kr_market_open_today,
 )

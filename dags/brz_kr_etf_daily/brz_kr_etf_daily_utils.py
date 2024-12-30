@@ -6,7 +6,7 @@ from airflow.models import Variable
 
 
 def is_kr_market_open_today(today: datetime) -> bool:
-    year = today.year
+    year = today.strftime("%Y")
     month = today.strftime("%m")
     today_nodash = today.strftime("%Y%m%d")
 
