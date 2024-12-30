@@ -2,7 +2,7 @@ import json
 
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
-from common.constants import S3_BUCKET
+from brz_industry_code_monthly.industry_code_constants import S3_BUCKET
 
 
 # Industry code uploader

@@ -7,8 +7,8 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
-from common.constants import MARKETS
 
+from brz_industry_code_monthly.industry_code_constants import MARKETS
 from brz_industry_code_monthly.industry_code_extractors import (
     crawl_industry_codes,
     fetch_industry_codes,
