@@ -14,7 +14,8 @@ from common.constants import S3_PARTITION_KEY, AwsConfig, ConnId, Layer
 class BankOfKoreaOperator(PythonOperator):
     BASE_URL = "https://ecos.bok.or.kr/api"
     ENDPOINT = "StatisticSearch"
-    S3_KEY_TEMPLATE = "{layer}/{stat_name}/{partition_key}={date}/data.json"
+    # NOTE: 같은 지표라도 수집 주기가 여러 가지인 것이 존재해서 S3 키 이름에 주기도 포함한다.
+    S3_KEY_TEMPLATE = "{layer}/{interval}_{stat_name}/{partition_key}={date}/data.json"
 
     def __init__(self, *args, **kwargs):
         super().__init__(python_callable=self.fetch_statistics, *args, **kwargs)
@@ -33,6 +34,7 @@ class BankOfKoreaOperator(PythonOperator):
         s3_key = self.S3_KEY_TEMPLATE.format(
             s3_bucket=Variable.get(AwsConfig.S3_BUCKET_KEY),
             layer=Layer.BRONZE,
+            interval=interval.lower(),
             stat_name=stat_name.lower(),
             partition_key=S3_PARTITION_KEY,
             date=kwargs["ds"],
