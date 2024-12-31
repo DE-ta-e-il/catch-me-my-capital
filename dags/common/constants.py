@@ -4,6 +4,7 @@ from enum import StrEnum
 class Interval(StrEnum):
     DAILY = "daily"
     MONTHLY = "monthly"
+    QUARTERLY = "quarterly"
     YEARLY = "yearly"
 
 
