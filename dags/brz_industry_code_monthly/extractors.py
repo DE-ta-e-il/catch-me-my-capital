@@ -4,7 +4,7 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 
-from brz_industry_code_monthly.industry_code_uploaders import upload_codes_to_s3
+from brz_industry_code_monthly.uploaders import upload_codes_to_s3
 
 
 # For KRX APIs' industry codes

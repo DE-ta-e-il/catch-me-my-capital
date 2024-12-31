@@ -8,8 +8,8 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-from brz_industry_code_monthly.industry_code_constants import MARKETS
-from brz_industry_code_monthly.industry_code_extractors import (
+from brz_industry_code_monthly.constants import MARKETS
+from brz_industry_code_monthly.extractors import (
     crawl_industry_codes,
     fetch_industry_codes,
 )
