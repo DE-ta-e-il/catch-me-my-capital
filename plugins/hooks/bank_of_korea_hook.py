@@ -1,33 +1,16 @@
-import json
-
 import requests
 from airflow.hooks.base import BaseHook
+from airflow.models import Variable
 from brz_economic_indicators_yearly.constants import IntervalCode
 
 
 class BankOfKoreaHook(BaseHook):
+    BASE_URL = "https://ecos.bok.or.kr/api"
     ENDPOINT = "StatisticSearch"
 
     def __init__(self, conn_id: str):
         super().__init__()
         self._conn_id = conn_id
-
-    def _parse_conn(self):
-        config = self.get_connection(self._conn_id)
-        extra = json.loads(config.extra)
-
-        base_url, api_key = extra.get("base_url"), extra.get("api_key")
-
-        if not base_url or not api_key:
-            raise ValueError("Invalid connection configuration")
-
-        return base_url, api_key
-
-    def get_conn(self):
-        session = requests.Session()
-        base_url, api_key = self._parse_conn()
-
-        return session, base_url, api_key
 
     def _get_data(
         self,
@@ -36,14 +19,14 @@ class BankOfKoreaHook(BaseHook):
         interval,
         batch_size=100,
     ):
-        session, base_url, api_key = self.get_conn()
+        api_key = Variable.get("BANK_OF_KOREA_API_KEY")
 
         all_data = []
         start_index = 1
 
         while True:
-            request_url = f"{base_url}/{self.ENDPOINT}/{api_key}/json/kr/{start_index}/{start_index+batch_size-1}/{stat_code}/{IntervalCode[interval]}/{date}/{date}"
-            response = session.get(request_url)
+            request_url = f"{self.BASE_URL}/{self.ENDPOINT}/{api_key}/json/kr/{start_index}/{start_index+batch_size-1}/{stat_code}/{IntervalCode[interval]}/{date}/{date}"
+            response = requests.get(request_url)
             response.raise_for_status()
 
             data = response.json()
