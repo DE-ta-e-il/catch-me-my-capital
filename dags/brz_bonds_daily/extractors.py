@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 import requests
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
-from brz_bonds_daily.brz_bonds_constants import FIRST_RUN, S3_BUCKET, START_DATE
-from brz_bonds_daily.brz_bonds_uploaders import upload_bonds_to_s3
+from brz_bonds_daily.constants import FIRST_RUN, S3_BUCKET, START_DATE
+from brz_bonds_daily.uploaders import upload_bonds_to_s3
 
 
 # Business Insider API endpoint url generator

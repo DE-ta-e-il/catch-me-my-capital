@@ -7,8 +7,8 @@ import requests
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from bs4 import BeautifulSoup
 
-from brz_bonds_meta_monthly.brz_bonds_meta_constants import S3_BUCKET
-from brz_bonds_meta_monthly.brz_bonds_meta_uploaders import upload_bonds_metadata_to_s3
+from brz_bonds_meta_monthly.constants import S3_BUCKET
+from brz_bonds_meta_monthly.uploaders import upload_bonds_metadata_to_s3
 
 
 # Fetches urls data and returns category name and bond name

@@ -4,8 +4,8 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-from brz_bonds_meta_monthly.brz_bonds_meta_constants import START_DATE
-from brz_bonds_meta_monthly.brz_bonds_meta_extractors import (
+from brz_bonds_meta_monthly.constants import START_DATE
+from brz_bonds_meta_monthly.extractors import (
     get_categories,
     get_metadata,
 )
