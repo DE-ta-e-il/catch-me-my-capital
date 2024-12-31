@@ -2,7 +2,6 @@ from enum import StrEnum
 
 
 class IntervalCode(StrEnum):
-    DAILY = "D"
     WEEKLY = "W"
     MONTHLY = "M"
     QUARTERLY = "Q"

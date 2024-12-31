@@ -7,8 +7,13 @@ import requests
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from brz_economic_indicators_yearly.constants import IntervalCode, StatCode
-from common.constants import S3_PARTITION_KEY, AwsConfig, ConnId, Layer
+from common.bank_of_korea_constants import IntervalCode, StatCode
+from common.constants import (
+    S3_PARTITION_KEY,
+    AwsConfig,
+    ConnId,
+    Layer,
+)
 
 
 class BankOfKoreaOperator(PythonOperator):
