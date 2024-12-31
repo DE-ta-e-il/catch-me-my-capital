@@ -80,6 +80,7 @@ def crawl_industry_codes(**ctxt):
     # so it would be safe to devide each category into tables
     # hence the logic.
     # https://en.wikipedia.org/wiki/Global_Industry_Classification_Standard#Classification
+
     sectors, industry_group, industry, sub_industry = [], [], [], []
     for i, r in enumerate(rows):
         if i % 2 == 0:  # Even indices indicate the name of the previous odd indices
