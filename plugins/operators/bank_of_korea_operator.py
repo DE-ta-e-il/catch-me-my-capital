@@ -1,4 +1,5 @@
 import json
+import math
 import tempfile
 
 import pendulum
@@ -19,12 +20,13 @@ class BankOfKoreaOperator(PythonOperator):
         super().__init__(python_callable=self.fetch_statistics, *args, **kwargs)
 
     def fetch_statistics(self, interval, stat_name, **kwargs):
-        date = self._format_date(interval, kwargs["logical_date"])
+        date = self._extract_date_parts(kwargs["logical_date"])
+        formatted_date = date[interval]
 
         stat_data = self._get_data(
             stat_code=StatCode[stat_name],
             interval=interval,
-            date=date,
+            date=formatted_date,
             batch_size=100,
         )
 
@@ -88,10 +90,13 @@ class BankOfKoreaOperator(PythonOperator):
                 replace=True,
             )
 
-    def _format_date(
-        self,
-        interval,
-        date: pendulum.DateTime,
-    ):
-        if interval == "YEARLY":
-            return date.year
+    def _extract_date_parts(self, date: pendulum.DateTime):
+        year, month, day = date.year, date.month, date.day
+        quarter = math.ceil(month / 3)
+
+        return {
+            "DAILY": f"{year}{month:02}{day:02}",
+            "MONTHLY": f"{year}{month:02}",
+            "QUARTERLY": f"{year}Q{quarter}",
+            "YEARLY": f"{year}",
+        }
