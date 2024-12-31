@@ -80,22 +80,28 @@ def crawl_industry_codes(**ctxt):
     # so it would be safe to devide each category into tables
     # hence the logic.
     # https://en.wikipedia.org/wiki/Global_Industry_Classification_Standard#Classification
-    sectors, industry_group, industry, sub_industry = {}, {}, {}, {}
+    sectors, industry_group, industry, sub_industry = [], [], [], []
     for i, r in enumerate(rows):
         if i % 2 == 0:  # Even indices indicate the name of the previous odd indices
             target = r.text.strip()
             name = rows[i + 1].text.strip()
             if len(target) == 2:
-                sectors[target] = sectors.get(target, name)
+                sectors.append({"code": target, "name": name})
             elif len(target) == 4:
-                industry_group[target] = industry_group.get(target, name)
+                industry_group.append({"code": target, "name": name})
             elif len(target) == 6:
-                industry[target] = industry.get(target, name)
+                industry.append({"code": target, "name": name})
             else:
-                sub_industry[target] = sub_industry.get(target, name)
+                sub_industry.append({"code": target, "name": name})
 
     date = ctxt["ds"]
     date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
 
-    key = f"bronze/industry_code/date={date}/gics_codes_{date}.json"
-    upload_codes_to_s3([sectors, industry_group, industry, sub_industry], key)
+    for category, payload in {
+        "sector": sectors,
+        "industry_group": industry_group,
+        "industry": industry,
+        "sub_industry": sub_industry,
+    }.items():
+        key = f"bronze/industry_code/date={date}/gics_{category}_codes_{date}.json"
+        upload_codes_to_s3(payload, key)
