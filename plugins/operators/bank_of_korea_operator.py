@@ -6,12 +6,12 @@ from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from brz_economic_indicators_yearly.constants import StatCode
-from common.constants import AwsConfig, ConnId, Layer
+from common.constants import S3_PARTITION_KEY, AwsConfig, ConnId, Layer
 from hooks.bank_of_korea_hook import BankOfKoreaHook
 
 
 class BankOfKoreaOperator(PythonOperator):
-    S3_KEY_TEMPLATE = "{layer}/{stat_name}/date={date}/data.json"
+    S3_KEY_TEMPLATE = "{layer}/{stat_name}/{partition_key}={date}/data.json"
 
     def __init__(self, *args, **kwargs):
         super().__init__(python_callable=self.fetch_statistics, *args, **kwargs)
@@ -48,6 +48,7 @@ class BankOfKoreaOperator(PythonOperator):
             s3_bucket=Variable.get(AwsConfig.S3_BUCKET_KEY),
             layer=Layer.BRONZE,
             stat_name=stat_name.lower(),
+            partition_key=S3_PARTITION_KEY,
             date=kwargs["ds"],
         )
 

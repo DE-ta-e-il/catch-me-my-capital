@@ -28,3 +28,6 @@ class AwsConfig(StrEnum):
 class ConnId(StrEnum):
     AWS = "aws_conn_id"
     BANK_OF_KOREA = "bank_of_korea_conn_id"
+
+
+S3_PARTITION_KEY = "ymd"
