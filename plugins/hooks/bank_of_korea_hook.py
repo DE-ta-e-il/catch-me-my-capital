@@ -47,6 +47,11 @@ class BankOfKoreaHook(BaseHook):
             response.raise_for_status()
 
             data = response.json()
+
+            # NOTE: 조회 기간에 해당하는 데이터가 없으면 "RESULT" 키를 포함하는 응답이 반환된다.
+            if "RESULT" in data:
+                raise ValueError("No data available for the query.")
+
             total_count = data[self.ENDPOINT].get("list_total_count", 0)
 
             if self.ENDPOINT in data and "row" in data[self.ENDPOINT]:
