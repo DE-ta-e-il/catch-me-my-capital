@@ -1,5 +1,4 @@
 import json
-import math
 import tempfile
 
 import pendulum
@@ -21,8 +20,7 @@ class BankOfKoreaOperator(PythonOperator):
         super().__init__(python_callable=self.fetch_statistics, *args, **kwargs)
 
     def fetch_statistics(self, interval, stat_name, **kwargs):
-        date = self._extract_date_parts(kwargs["logical_date"])
-        formatted_date = date[interval]
+        formatted_date = self._format_date(kwargs["logical_date"], interval)
 
         stat_data = self._get_data(
             stat_code=Stat[stat_name].code,
@@ -49,7 +47,6 @@ class BankOfKoreaOperator(PythonOperator):
         start_index = 1
 
         while True:
-            date = "2023"
             request_url = f"{self.BASE_URL}/{self.ENDPOINT}/{api_key}/json/kr/{start_index}/{start_index+batch_size-1}/{stat_code}/{Interval[interval].code}/{date}/{date}"
             response = requests.get(request_url)
             response.raise_for_status()
@@ -93,13 +90,14 @@ class BankOfKoreaOperator(PythonOperator):
                 replace=True,
             )
 
-    def _extract_date_parts(self, date: pendulum.DateTime):
-        year, month, day = date.year, date.month, date.day
-        quarter = math.ceil(month / 3)
+    def _format_date(self, date: pendulum.DateTime, interval: str):
+        year, quarter, month, day = date.year, date.quarter, date.month, date.day
 
-        return {
+        formatted_dates = {
             "DAILY": f"{year}{month:02}{day:02}",
             "MONTHLY": f"{year}{month:02}",
             "QUARTERLY": f"{year}Q{quarter}",
             "YEARLY": f"{year}",
         }
+
+        return formatted_dates[interval]
