@@ -31,7 +31,7 @@ class BankOfKoreaOperator(PythonOperator):
 
         formatted_date = self._format_date(kwargs["logical_date"], interval)
 
-        stat_data = self._get_data(
+        stat_data = self._fetch_statistics_from_api(
             stat_code=Stat[stat_name].code,
             interval=interval,
             date=formatted_date,
@@ -47,9 +47,9 @@ class BankOfKoreaOperator(PythonOperator):
             date=kwargs["ds"],
         )
 
-        self._upload_to_s3(stat_data, s3_key)
+        self._upload_data_to_s3(stat_data, s3_key)
 
-    def _get_data(
+    def _fetch_statistics_from_api(
         self, stat_code: str, date: str, interval: str, batch_size: int = 100
     ) -> List[Dict[str, Any]]:
         """
@@ -101,7 +101,7 @@ class BankOfKoreaOperator(PythonOperator):
 
         return all_data
 
-    def _upload_to_s3(self, data: List[Dict[str, Any]], s3_key: str) -> None:
+    def _upload_data_to_s3(self, data: List[Dict[str, Any]], s3_key: str) -> None:
         """
         데이터를 지정한 S3 경로에 업로드합니다.
 
