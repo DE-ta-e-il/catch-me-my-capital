@@ -21,6 +21,14 @@ class BankOfKoreaOperator(PythonOperator):
         super().__init__(python_callable=self.fetch_statistics, *args, **kwargs)
 
     def fetch_statistics(self, interval: str, stat_name: str, **kwargs) -> None:
+        """
+        한국은행 API에서 통계 데이터를 수집하고 S3에 업로드하는 작업을 수행합니다.
+
+        Args:
+            interval (str): 데이터 수집 주기
+            stat_name (str): 수집할 통계 데이터 이름
+        """
+
         formatted_date = self._format_date(kwargs["logical_date"], interval)
 
         stat_data = self._get_data(
@@ -44,6 +52,23 @@ class BankOfKoreaOperator(PythonOperator):
     def _get_data(
         self, stat_code: str, date: str, interval: str, batch_size: int = 100
     ) -> List[Dict[str, Any]]:
+        """
+        한국은행 API를 호출하여 지정한 통계 데이터를 수집합니다.
+
+        Args:
+            stat_code (str): 조회할 통계 데이터의 코드
+            date (str): 데이터 조회 기준 날짜
+            interval (str): 데이터 수집 주기
+            batch_size (int, optional): 한번의 호출에서 가져올 데이터의 최대 개수. 기본값은 100
+
+        Raises:
+            ValueError: API 응답에 "RESULT" 키가 포함된 경우, 조회할 데이터가 없음을 의미
+            requests.exceptions.RequestException: API 호출 중 네트워크 오류 또는 HTTP 요청 오류가 발생한 경우
+
+        Returns:
+            List[Dict[str, Any]]: 수집된 통계 데이터 결과가 담긴 리스트
+        """
+
         api_key = Variable.get("BANK_OF_KOREA_API_KEY")
 
         all_data = []
@@ -77,6 +102,14 @@ class BankOfKoreaOperator(PythonOperator):
         return all_data
 
     def _upload_to_s3(self, data: List[Dict[str, Any]], s3_key: str) -> None:
+        """
+        데이터를 지정한 S3 경로에 업로드합니다.
+
+        Args:
+            data (List[Dict[str, Any]]): 업로드할 데이터가 담긴 리스트
+            s3_key (str): 업로드할 S3 키
+        """
+
         s3_hook = S3Hook(aws_conn_id=ConnId.AWS)
 
         with tempfile.NamedTemporaryFile(
@@ -94,6 +127,17 @@ class BankOfKoreaOperator(PythonOperator):
             )
 
     def _format_date(self, date: pendulum.DateTime, interval: str) -> str:
+        """
+        날짜와 수집 주기에 따라 날짜를 포맷팅해서 반환합니다.
+
+        Args:
+            date (pendulum.DateTime): 기준 날짜
+            interval (str): 데이터 수집 주기
+
+        Returns:
+            str: 포맷이 변환된 날짜 문자열
+        """
+
         year, quarter, month, day = date.year, date.quarter, date.month, date.day
 
         formatted_dates = {
