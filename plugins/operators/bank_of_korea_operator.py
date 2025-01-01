@@ -29,6 +29,8 @@ class BankOfKoreaOperator(PythonOperator):
             stat_name (str): 수집할 통계 데이터 이름
         """
 
+        self._validate_parameters(interval, stat_name)
+
         formatted_date = self._format_date(kwargs["logical_date"], interval)
         self.log.info(f"Start fetching statistics for: {interval} / {stat_name}")
 
@@ -111,6 +113,7 @@ class BankOfKoreaOperator(PythonOperator):
             data (List[Dict[str, Any]]): 업로드할 데이터가 담긴 리스트
             s3_key (str): 업로드할 S3 키
         """
+
         self.log.info(f"Start uploading data to S3 with key: {s3_key}")
 
         s3_hook = S3Hook(aws_conn_id=ConnId.AWS)
@@ -127,6 +130,26 @@ class BankOfKoreaOperator(PythonOperator):
                 bucket_name=Variable.get(AwsConfig.S3_BUCKET_KEY),
                 key=s3_key,
                 replace=True,
+            )
+
+    def _validate_parameters(self, interval: str, stat_name: str) -> None:
+        """
+        파라미터에 대한 유효성을 검증합니다.
+
+        Args:
+            interval (str): 데이터 수집 주기
+            stat_name (str): 수집할 통계 데이터 이름
+
+        Raises:
+            ValueError: 유효하지 않은 파라미터가 주어졌을 경우
+        """
+
+        valid_intervals = {interval.name for interval in Interval}
+        valid_stat_names = {stat.name for stat in Stat}
+
+        if interval not in valid_intervals or stat_name not in valid_stat_names:
+            raise ValueError(
+                f"Invalid interval '{interval}' or stat_name '{stat_name}'."
             )
 
     def _format_date(self, date: pendulum.DateTime, interval: str) -> str:
