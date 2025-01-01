@@ -1,6 +1,6 @@
 import json
 import tempfile
-from typing import Any, Dict, List
+from typing import Any, Dict, Generator, List
 
 import pendulum
 import requests
@@ -34,12 +34,16 @@ class BankOfKoreaOperator(PythonOperator):
         formatted_date = self._format_date(kwargs["logical_date"], interval)
         self.log.info(f"Start fetching statistics for: {interval} / {stat_name}")
 
-        stat_data = self._fetch_statistics_from_api(
-            stat_code=Stat[stat_name].code,
-            interval=interval,
-            date=formatted_date,
-            batch_size=100,
+        stat_data = list(
+            self._fetch_statistics_from_api(
+                stat_code=Stat[stat_name].code,
+                interval=interval,
+                date=formatted_date,
+                batch_size=100,
+            )
         )
+
+        self.log.info(f"Completed fetching data. Total records: {len(stat_data)}")
 
         s3_key = self.S3_KEY_TEMPLATE.format(
             s3_bucket=Variable.get(AwsConfig.S3_BUCKET_KEY),
@@ -55,7 +59,7 @@ class BankOfKoreaOperator(PythonOperator):
 
     def _fetch_statistics_from_api(
         self, stat_code: str, date: str, interval: str, batch_size: int = 100
-    ) -> List[Dict[str, Any]]:
+    ) -> Generator[List[Dict[str, Any]], None, None]:
         """
         한국은행 API를 호출하여 지정한 통계 데이터를 수집합니다.
 
@@ -74,36 +78,24 @@ class BankOfKoreaOperator(PythonOperator):
         """
 
         api_key = Variable.get("BANK_OF_KOREA_API_KEY")
+        offset, total_records = 1, None
+        request_url_prefix = f"{self.BASE_URL}/{self.ENDPOINT}/{api_key}/json/kr"
 
-        all_data = []
-        start_index = 1
-
-        while True:
-            request_url = f"{self.BASE_URL}/{self.ENDPOINT}/{api_key}/json/kr/{start_index}/{start_index+batch_size-1}/{stat_code}/{Interval[interval].code}/{date}/{date}"
+        while total_records is None or offset < total_records:
+            request_url = f"{request_url_prefix}/{offset}/{offset+batch_size-1}/{stat_code}/{Interval[interval].code}/{date}/{date}"
             response = requests.get(request_url)
 
             response.raise_for_status()
-
-            data = response.json()
+            response_json = response.json()
 
             # NOTE: 조회 기간에 해당하는 데이터가 없으면 "RESULT" 키를 포함하는 응답이 반환됩니다.
-            if "RESULT" in data:
+            if "RESULT" in response_json:
                 raise ValueError("No data available for the query.")
 
-            total_count = data[self.ENDPOINT].get("list_total_count", 0)
+            yield response_json[self.ENDPOINT]["row"]
 
-            if self.ENDPOINT in data and "row" in data[self.ENDPOINT]:
-                batch_data = data[self.ENDPOINT]["row"]
-                all_data.extend(batch_data)
-            else:
-                break
-
-            start_index += batch_size
-            if start_index > total_count:
-                break
-
-        self.log.info(f"Completed fetching data. Total records: {len(batch_data)}")
-        return all_data
+            offset += batch_size
+            total_records = response_json[self.ENDPOINT]["list_total_count"]
 
     def _upload_data_to_s3(self, data: List[Dict[str, Any]], s3_key: str) -> None:
         """
