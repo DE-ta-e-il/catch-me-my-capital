@@ -1,13 +1,9 @@
-from enum import StrEnum
+from enum import Enum
 
 
-class IntervalCode(StrEnum):
-    WEEKLY = "W"
-    MONTHLY = "M"
-    QUARTERLY = "Q"
-    YEARLY = "A"
-
-
-class StatCode(StrEnum):
+class Stat(Enum):
     CENTRAL_BANK_POLICY_RATES = "902Y006"
     GDP_GROWTH_RATE = "902Y015"
+
+    def __init__(self, code):
+        self.code = code

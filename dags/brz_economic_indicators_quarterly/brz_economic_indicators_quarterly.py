@@ -3,6 +3,7 @@ from datetime import timedelta
 import pendulum
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
+from common.bank_of_korea_constants import Stat
 from common.constants import Interval, Layer, Owner
 from operators.bank_of_korea_operator import BankOfKoreaOperator
 
@@ -14,8 +15,8 @@ default_args = {
 }
 
 # NOTE: 분기 단위로 수집할 경제 지표 목록
-STAT_NAME_LIST = ["GDP_GROWTH_RATE"]
-INTERVAL_KEY = "QUARTERLY"
+STAT_NAME_LIST = [Stat.GDP_GROWTH_RATE.name]
+INTERVAL_NAME = Interval.QUARTERLY.name
 
 with DAG(
     dag_id="brz_economic_indicators_quarterly",
@@ -24,7 +25,7 @@ with DAG(
     start_date=pendulum.datetime(2015, 1, 1),
     catchup=False,
     default_args=default_args,
-    tags=[Layer.BRONZE, Interval.QUARTERLY, "economic_indicators"],
+    tags=[Layer.BRONZE, Interval.QUARTERLY.label, "economic_indicators"],
 ) as dag:
     start, end = EmptyOperator(task_id="start"), EmptyOperator(task_id="end")
 
@@ -32,7 +33,7 @@ with DAG(
         BankOfKoreaOperator(
             task_id=f"fetch_{stat_name.lower()}",
             op_kwargs={
-                "interval": INTERVAL_KEY,
+                "interval": INTERVAL_NAME,
                 "stat_name": stat_name,
             },
         )

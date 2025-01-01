@@ -7,13 +7,8 @@ import requests
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from common.bank_of_korea_constants import IntervalCode, StatCode
-from common.constants import (
-    S3_PARTITION_KEY,
-    AwsConfig,
-    ConnId,
-    Layer,
-)
+from common.bank_of_korea_constants import Stat
+from common.constants import AwsConfig, ConnId, Interval, Layer
 
 
 class BankOfKoreaOperator(PythonOperator):
@@ -30,7 +25,7 @@ class BankOfKoreaOperator(PythonOperator):
         formatted_date = date[interval]
 
         stat_data = self._get_data(
-            stat_code=StatCode[stat_name],
+            stat_code=Stat[stat_name].code,
             interval=interval,
             date=formatted_date,
             batch_size=100,
@@ -41,7 +36,7 @@ class BankOfKoreaOperator(PythonOperator):
             layer=Layer.BRONZE,
             interval=interval.lower(),
             stat_name=stat_name.lower(),
-            partition_key=S3_PARTITION_KEY,
+            partition_key=AwsConfig.S3_PARTITION_KEY,
             date=kwargs["ds"],
         )
 
@@ -54,7 +49,8 @@ class BankOfKoreaOperator(PythonOperator):
         start_index = 1
 
         while True:
-            request_url = f"{self.BASE_URL}/{self.ENDPOINT}/{api_key}/json/kr/{start_index}/{start_index+batch_size-1}/{stat_code}/{IntervalCode[interval]}/{date}/{date}"
+            date = "2023"
+            request_url = f"{self.BASE_URL}/{self.ENDPOINT}/{api_key}/json/kr/{start_index}/{start_index+batch_size-1}/{stat_code}/{Interval[interval].code}/{date}/{date}"
             response = requests.get(request_url)
             response.raise_for_status()
 
