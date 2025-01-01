@@ -14,7 +14,7 @@ from common.constants import AwsConfig, ConnId, Interval, Layer
 class BankOfKoreaOperator(PythonOperator):
     BASE_URL = "https://ecos.bok.or.kr/api"
     ENDPOINT = "StatisticSearch"
-    # NOTE: 같은 지표라도 수집 주기가 여러 가지인 것이 존재해서 S3 키 이름에 주기도 포함한다.
+    # NOTE: 같은 지표라도 수집 주기가 여러 가지인 것이 존재해서 S3 키 이름에 주기도 포함합니다.
     S3_KEY_TEMPLATE = "{layer}/{interval}_{stat_name}/{partition_key}={date}/data.json"
 
     def __init__(self, *args, **kwargs):
@@ -81,7 +81,7 @@ class BankOfKoreaOperator(PythonOperator):
 
             data = response.json()
 
-            # NOTE: 조회 기간에 해당하는 데이터가 없으면 "RESULT" 키를 포함하는 응답이 반환된다.
+            # NOTE: 조회 기간에 해당하는 데이터가 없으면 "RESULT" 키를 포함하는 응답이 반환됩니다.
             if "RESULT" in data:
                 raise ValueError("No data available for the query.")
 

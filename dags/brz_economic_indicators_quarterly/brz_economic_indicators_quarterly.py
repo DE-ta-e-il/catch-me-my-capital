@@ -7,14 +7,12 @@ from common.bank_of_korea_constants import Stat
 from common.constants import Interval, Layer, Owner
 from operators.bank_of_korea_operator import BankOfKoreaOperator
 
-# TODO: config 값 확인
 default_args = {
     "owner": Owner.DAMI,
-    "retries": 0,
+    "retries": 3,
     "retry_delay": timedelta(minutes=5),
 }
 
-# NOTE: 분기 단위로 수집할 경제 지표 목록
 STAT_NAME_LIST = [Stat.GDP_GROWTH_RATE.name]
 INTERVAL_NAME = Interval.QUARTERLY.name
 
