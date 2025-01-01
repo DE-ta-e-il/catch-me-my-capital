@@ -1,5 +1,6 @@
 import json
 import tempfile
+from typing import Any, Dict, List
 
 import pendulum
 import requests
@@ -19,7 +20,7 @@ class BankOfKoreaOperator(PythonOperator):
     def __init__(self, *args, **kwargs):
         super().__init__(python_callable=self.fetch_statistics, *args, **kwargs)
 
-    def fetch_statistics(self, interval, stat_name, **kwargs):
+    def fetch_statistics(self, interval: str, stat_name: str, **kwargs) -> None:
         formatted_date = self._format_date(kwargs["logical_date"], interval)
 
         stat_data = self._get_data(
@@ -40,7 +41,9 @@ class BankOfKoreaOperator(PythonOperator):
 
         self._upload_to_s3(stat_data, s3_key)
 
-    def _get_data(self, stat_code, date, interval, batch_size=100):
+    def _get_data(
+        self, stat_code: str, date: str, interval: str, batch_size: int = 100
+    ) -> List[Dict[str, Any]]:
         api_key = Variable.get("BANK_OF_KOREA_API_KEY")
 
         all_data = []
@@ -73,7 +76,7 @@ class BankOfKoreaOperator(PythonOperator):
 
         return all_data
 
-    def _upload_to_s3(self, data, s3_key):
+    def _upload_to_s3(self, data: List[Dict[str, Any]], s3_key: str) -> None:
         s3_hook = S3Hook(aws_conn_id=ConnId.AWS)
 
         with tempfile.NamedTemporaryFile(
@@ -90,7 +93,7 @@ class BankOfKoreaOperator(PythonOperator):
                 replace=True,
             )
 
-    def _format_date(self, date: pendulum.DateTime, interval: str):
+    def _format_date(self, date: pendulum.DateTime, interval: str) -> str:
         year, quarter, month, day = date.year, date.quarter, date.month, date.day
 
         formatted_dates = {
