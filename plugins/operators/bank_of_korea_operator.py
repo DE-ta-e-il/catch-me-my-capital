@@ -30,6 +30,7 @@ class BankOfKoreaOperator(PythonOperator):
         """
 
         formatted_date = self._format_date(kwargs["logical_date"], interval)
+        self.log.info(f"Start fetching statistics for: {interval} / {stat_name}")
 
         stat_data = self._fetch_statistics_from_api(
             stat_code=Stat[stat_name].code,
@@ -48,6 +49,7 @@ class BankOfKoreaOperator(PythonOperator):
         )
 
         self._upload_data_to_s3(stat_data, s3_key)
+        self.log.info(f"Successfully uploaded data to S3 with key: {s3_key}")
 
     def _fetch_statistics_from_api(
         self, stat_code: str, date: str, interval: str, batch_size: int = 100
@@ -77,6 +79,7 @@ class BankOfKoreaOperator(PythonOperator):
         while True:
             request_url = f"{self.BASE_URL}/{self.ENDPOINT}/{api_key}/json/kr/{start_index}/{start_index+batch_size-1}/{stat_code}/{Interval[interval].code}/{date}/{date}"
             response = requests.get(request_url)
+
             response.raise_for_status()
 
             data = response.json()
@@ -90,15 +93,14 @@ class BankOfKoreaOperator(PythonOperator):
             if self.ENDPOINT in data and "row" in data[self.ENDPOINT]:
                 batch_data = data[self.ENDPOINT]["row"]
                 all_data.extend(batch_data)
-                print(f"Fetched {len(batch_data)} records.")
             else:
-                print("No more data or invalid response.")
                 break
 
             start_index += batch_size
             if start_index > total_count:
                 break
 
+        self.log.info(f"Completed fetching data. Total records: {len(batch_data)}")
         return all_data
 
     def _upload_data_to_s3(self, data: List[Dict[str, Any]], s3_key: str) -> None:
@@ -109,6 +111,7 @@ class BankOfKoreaOperator(PythonOperator):
             data (List[Dict[str, Any]]): 업로드할 데이터가 담긴 리스트
             s3_key (str): 업로드할 S3 키
         """
+        self.log.info(f"Start uploading data to S3 with key: {s3_key}")
 
         s3_hook = S3Hook(aws_conn_id=ConnId.AWS)
 
