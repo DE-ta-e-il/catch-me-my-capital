@@ -10,8 +10,9 @@ locals {
 }
 
 resource "aws_s3_bucket" "this" {
-  bucket = local.bucket_name
-  tags   = local.all_tags
+  bucket        = local.bucket_name
+  force_destroy = true
+  tags          = local.all_tags
 }
 
 resource "aws_s3_bucket_ownership_controls" "this" {
