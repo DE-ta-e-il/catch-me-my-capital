@@ -7,7 +7,7 @@ import requests
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
 from brz_bonds_daily.constants import FIRST_RUN, S3_BUCKET, START_DATE
-from brz_bonds_daily.uploaders import upload_bonds_to_s3
+from brz_bonds_daily.uploaders import upload_to_s3
 
 
 # Business Insider API endpoint url generator
@@ -42,8 +42,7 @@ def generate_urls(**ctxt):
         for bond_kind in urls_dict
     }
 
-    with open("/tmp/full_urls_bonds.json", "w") as file:
-        json.dump(full_urls, file)
+    upload_to_s3(full_urls, "data/full_urls_bonds.json")
 
 
 # A dynamic task template for fetching bond data from Business insider API
@@ -52,32 +51,26 @@ def get_bond_data(bond_kind, **ctxt):
     date = datetime.strptime(ds, "%Y-%m-%d").strftime("%Y-%m-%d")
 
     # Fetch urls
-    with open("/tmp/full_urls_bonds.json", "r") as file:
-        full_urls = json.load(file)
+    s3 = S3Hook(aws_conn_id="aws_conn_id")
+    file = s3.read_key(key="data/full_urls_bonds.json", bucket_name=S3_BUCKET)
+    full_urls = json.loads(file)
 
     # Fetching the ranged data
     for target in full_urls[bond_kind]:
         response = requests.get(full_urls[bond_kind][target])
         time.sleep(3)
 
-        # If this is the first run,
-        # unravel 10-years-worth of data
-        # and save them as smaller partitions
-        if FIRST_RUN:
-            # gbd: Short for grouped-by-day
-            gbd = defaultdict(list)
-            for rec in response.json():
-                date = rec["Date"]
-                gbd[date[:10]].append(rec)
+        # gbd: Short for grouped-by-day
+        gbd = defaultdict(list)
+        for rec in response.json():
+            date = rec["Date"]
+            price = rec.pop("Close")
+            rec.update({"Price": price, "name": target})
+            gbd[date[:10]].append(rec)
 
-            if len(gbd) == 0:
-                raise Exception("Nothing was fetched")
+        if len(gbd) == 0:
+            raise Exception("Nothing was fetched")
 
-            for dt, daily_list in gbd.items():
-                key = f"bronze/{bond_kind}/kind={target}/date={dt}/{target}_{dt}.json"
-                upload_bonds_to_s3(daily_list, key)
-
-        # If it's not the first rodeo, run normal operation 🔫🤠🐂
-        else:
-            key = f"bronze/{bond_kind}/kind={target}/date={date}/{target}_{date}.json"
-            upload_bonds_to_s3(response.json(), key)
+        for dt, daily_list in gbd.items():
+            key = f"bronze/{bond_kind}/ymd={dt}/{target}_{dt}.json"
+            upload_to_s3(daily_list, key)
