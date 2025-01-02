@@ -4,8 +4,8 @@ on:
     branches:
       - test
 env:
-  AWS_REGION_NAME: "ap-northeast-2"
-  AWS_BUCKET_NAME: "dm-test-20250102"
+  AWS_REGION_NAME: ${{ vars.AWS_REGION_NAME }}
+  AWS_BUCKET_NAME: ${{ vars.AWS_BUCKET_NAME }}
 
 permissions:
   id-token: write
