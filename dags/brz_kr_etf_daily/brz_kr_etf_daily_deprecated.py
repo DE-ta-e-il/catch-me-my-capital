@@ -8,25 +8,25 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator, ShortCircuitOperator
+from common.constants import Interval, Layer, Owner
 
 from brz_kr_etf_daily.tasks import (
     fetch_etf_from_krx_web_to_s3,
     verify_market_open,
 )
 
-default_args = {
-    "owner": "j-eum",  # TODO: 공통 ENUM적용 예정
-}
+default_args = {"owner": Owner.JUNGMIN}
 
 with DAG(
     dag_id="brz_kr_etf_daily_deprecated",
     default_args=default_args,
     description="한국거래소 ETF 종목별 시세",
-    tags=["bronze", "ETF", "daily", "weekday"],
+    tags=[Layer.BRONZE, "ETF", Interval.DAILY.label, "weekday"],
     schedule="0 0 * * 1-5",
     start_date=datetime(2015, 1, 1),
     end_date=datetime(2019, 12, 31),
     catchup=False,
+    max_active_runs=5,
 ) as dag:
     verify_market_open = ShortCircuitOperator(
         task_id="verify_market_open",
