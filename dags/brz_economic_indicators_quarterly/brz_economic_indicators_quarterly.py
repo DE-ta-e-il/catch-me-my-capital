@@ -13,6 +13,7 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
 }
 
+# NOTE: 새로운 경제 지표가 추가 수집될 가능성이 있어, 리스트 형태로 구현해두었습니다.
 STAT_NAME_LIST = [Stat.GDP_GROWTH_RATE.name]
 INTERVAL_NAME = Interval.QUARTERLY.name
 
