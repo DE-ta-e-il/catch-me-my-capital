@@ -20,6 +20,8 @@ INTERVAL_NAME = Interval.YEARLY.name
 with DAG(
     dag_id="brz_economic_indicators_yearly",
     description="Yearly pipeline to acquire and store economic indicators.",
+    # 한국은행에서 제공하는 연간 경제지표는 통상적으로 4월 중순-말에 공개되기 때문에,
+    # 5월 1일에는 안정적인 데이터 수집이 가능해질 것으로 보고, 아래와 같이 스케쥴을 설정하였습니다.
     schedule_interval="0 0 1 5 *",
     start_date=pendulum.datetime(2015, 1, 1),
     catchup=False,
