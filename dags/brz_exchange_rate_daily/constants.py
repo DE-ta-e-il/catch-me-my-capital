@@ -16,5 +16,5 @@ CURRENCY_PAIRS = [
 
 EXCHANGE_RATE_TMP_FILE_PATH = "/tmp/exchange_rates_{{ ds }}.csv"
 EXCHANGE_RATE_DATA_S3_KEY = (
-    "bronze/exchange_rate/date={{ ds }}/{{ ds }}_exchange_rates.csv"
+    "bronze/exchange_rate/ymd={{ ds }}/{{ ds }}_exchange_rates.csv"
 )
