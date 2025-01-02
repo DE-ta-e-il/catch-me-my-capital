@@ -20,8 +20,9 @@ with DAG(
     description="한국거래소 ETF 종목별 시세",
     tags=["bronze", "ETF", "daily", "weekday"],
     schedule="0 5 * * 1-5",
-    start_date=datetime(2025, 1, 1),  # 과거 데이터는 별도로 한번에 처리
+    start_date=datetime(2025, 12, 20),  # 과거 데이터는 별도로 한번에 처리
     catchup=True,
+    max_active_runs=3,
 ) as dag:
     verify_market_open = ShortCircuitOperator(
         task_id="verify_market_open",
