@@ -15,7 +15,6 @@ default_args = {
 
 # NOTE: 새로운 경제 지표가 추가 수집될 가능성이 있어, 리스트 형태로 구현해두었습니다.
 STAT_NAME_LIST = [Stat.GDP_GROWTH_RATE.name]
-INTERVAL_NAME = Interval.YEARLY.name
 
 with DAG(
     dag_id="brz_economic_indicators_yearly",
@@ -34,7 +33,7 @@ with DAG(
         BankOfKoreaOperator(
             task_id=f"fetch_{stat_name.lower()}",
             op_kwargs={
-                "interval": INTERVAL_NAME,
+                "interval": Interval.YEARLY.name,
                 "stat_name": stat_name,
             },
         )
