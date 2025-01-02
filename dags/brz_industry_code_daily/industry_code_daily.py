@@ -18,7 +18,7 @@ with DAG(
     dag_id="brz_industry_code_daily",
     start_date=datetime(2024, 12, 1),
     schedule_interval="0 0 * * 1-5",
-    catchup=False,
+    catchup=True,
     tags=["bronze"],
     description="A DAG that fetches industry(sector) codes for stocks.",
     default_args={"retries": 0, "trigger_rule": "all_success", "owner": "dee"},

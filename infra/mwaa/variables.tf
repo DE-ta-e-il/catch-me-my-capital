@@ -46,3 +46,17 @@ locals {
     "Environment" : var.environment
   })
 }
+
+variable "aws_conn_login" {
+  description = "aws iam id"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "aws_conn_pw" {
+  description = "aws connection secret"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
