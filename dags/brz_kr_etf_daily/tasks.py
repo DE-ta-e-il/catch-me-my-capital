@@ -51,7 +51,7 @@ def is_kr_market_open_today(today: datetime) -> bool:
 
 
 def generate_json_s3_key(today_dash: str) -> str:
-    return f"bronze/kr_etf/date={today_dash}/data.json"
+    return f"bronze/kr_etf/ymd={today_dash}/data.json"
 
 
 def verify_market_open(ds_nodash):

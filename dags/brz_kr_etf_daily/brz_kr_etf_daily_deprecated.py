@@ -9,7 +9,7 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonOperator, ShortCircuitOperator
 
-from brz_kr_etf_daily.brz_kr_etf_daily_tasks import (
+from brz_kr_etf_daily.tasks import (
     fetch_etf_from_krx_web_to_s3,
     verify_market_open,
 )
