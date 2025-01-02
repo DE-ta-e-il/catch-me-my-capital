@@ -28,12 +28,10 @@ def get_metadata(category, bond_name, **ctxt):
     urls_dict = json.loads(file)
 
     # Bonds meta data crawling
-    # TODO: ✅ Would it be better to do this on a separate DAG?
-    # TODO: ✅I should try the Soup on the industry code DAG?! 🤨
     res = requests.get(urls_dict[category][bond_name]["meta"])
     time.sleep(3)
     soup = BeautifulSoup(res.text, "html.parser")
-    table = soup.find("table")  # there is only one table
+    table = soup.find("table")  # there is only one table tag
 
     data = {}
     for row in table.find_all("tr"):
@@ -42,9 +40,8 @@ def get_metadata(category, bond_name, **ctxt):
             header = cols[0].text.strip()
             content = cols[1].text.strip()
             data[header] = data.get(header, content)
+            data["name"] = bond_name
 
     date = datetime.strptime(ctxt["ds"], "%Y-%m-%d").strftime("%Y-%m-%d")
-    key = (
-        f"bronze/{category}/kind={bond_name}/date={date}/{category}_{bond_name}_meta_{date[:7]}.json",
-    )
+    key = (f"bronze/{category}/ymd={date}/{category}_{bond_name}_meta_{date[:7]}.json",)
     upload_bonds_metadata_to_s3(data, key)
