@@ -30,7 +30,7 @@ selected_df = df.select(
     col("Number_of_trades"),
     col("Symbol"),
     col("ymd"),
-)
+).coalesce(1)
 
 # Spark DataFrame을 Glue DynamicFrame으로 변환
 dynamic_frame = DynamicFrame.fromDF(selected_df, glueContext, "dynamic_frame")
@@ -40,8 +40,7 @@ glueContext.write_dynamic_frame.from_options(
     frame=dynamic_frame,
     connection_type="s3",
     connection_options={
-        "path": "s3://team3-1-s3/silver/coin_data/fact_coin_data.parquet",
-        "partitionKeys": ["ymd"],
+        "path": "s3://team3-1-s3/silver/coin_data/fact_coin_data",
     },
     format="parquet",
 )
