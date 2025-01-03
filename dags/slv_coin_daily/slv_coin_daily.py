@@ -21,7 +21,7 @@ with DAG(
     default_args=default_args,
     schedule_interval="@daily",
     catchup=False,
-    tags=[Layer.SILVER, Interval.DAILY.value],
+    tags=[Layer.SILVER, Interval.DAILY.label],
 ) as dag:
     # bronze 레이어 DAG 완료 대기
     wait_for_bronze = ExternalTaskSensor(
