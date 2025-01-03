@@ -1,10 +1,8 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.providers.amazon.aws.operators.glue import (
-    GlueCrawlerOperator,
-    GlueJobOperator,
-)
+from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
+from airflow.providers.amazon.aws.operators.glue_crawler import GlueCrawlerOperator
 from airflow.sensors.external_task import ExternalTaskSensor
 from common import Interval, Layer, Owner
 
@@ -57,8 +55,7 @@ with DAG(
         num_of_dpus=2,  # Glue Job에 할당할 DPUs 수
         create_job_kwargs={
             "GlueVersion": "3.0",
-            "NumberOfWorkers": 2,
-            "WorkerType": "G.1X",
+            "MaxCapacity": 10,
         },
         aws_conn_id="aws_conn_id",
     )
