@@ -2,7 +2,6 @@ import json
 from datetime import datetime
 
 import requests
-from airflow.exceptions import AirflowFailException
 from common.s3_utils import upload_string_to_s3
 
 
@@ -22,9 +21,7 @@ def fetch_krx_market_holiday_to_s3(ds_nodash: str) -> None:
     response = requests.post(url, data=data)
 
     if response.status_code != 200:
-        raise AirflowFailException(
-            f"Failed to fetch API: {response.status_code}, {response.text}"
-        )
+        raise Exception(f"Failed to fetch API: {response.status_code}, {response.text}")
 
     data = response.json()
     items = data.get("block1")
@@ -34,7 +31,7 @@ def fetch_krx_market_holiday_to_s3(ds_nodash: str) -> None:
             f"Data retrieval failed: 'output' is missing or empty. Full data: {data}"
         )
 
-    data_str = json.dumps(items)
+    data_str = json.dumps(items, ensure_ascii=False)
     s3_key = f"bronze/kr_market_holiday/year={year}/data.json"
 
     upload_string_to_s3(data_str, s3_key)
