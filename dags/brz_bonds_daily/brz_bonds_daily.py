@@ -3,14 +3,14 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-from brz_bonds_daily.constants import FIRST_RUN, START_DATE, URLS_DICT
+from brz_bonds_daily.constants import AirflowParam, URLParam
 from brz_bonds_daily.extractors import generate_urls, get_bond_data
 
 with DAG(
     dag_id="brz_bonds_daily",
-    start_date=START_DATE,
+    start_date=AirflowParam.START_DATE.value,
     schedule_interval="0 0 * * 1-5",
-    catchup=not FIRST_RUN,
+    catchup=not AirflowParam.FIRST_RUN.value,
     default_args={
         "retries": 0,
         "trigger_rule": "all_success",
@@ -28,7 +28,7 @@ with DAG(
     )
 
     with TaskGroup(group_id="api_caller_group") as api_caller_group:
-        for bond_kind in URLS_DICT:
+        for bond_kind in URLParam.URLS_DICT.value:
             get_corresponding_bond_data = PythonOperator(
                 task_id=f"fetch_{bond_kind}",
                 python_callable=get_bond_data,

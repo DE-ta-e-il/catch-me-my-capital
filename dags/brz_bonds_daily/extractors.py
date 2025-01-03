@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import requests
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
-from brz_bonds_daily.constants import FIRST_RUN, S3_BUCKET, START_DATE
+from brz_bonds_daily.constants import AirflowParam, ProvidersParam
 from brz_bonds_daily.uploaders import upload_to_s3
 
 
@@ -15,14 +15,16 @@ def generate_urls(**ctxt):
     # Hooks, too, must be wrapped in here...
     # Get the urls file
     s3 = S3Hook(aws_conn_id="aws_conn_id")
-    file = s3.read_key(key="data/urls_bonds.json", bucket_name=S3_BUCKET)
+    file = s3.read_key(
+        key="data/urls_bonds.json", bucket_name=ProvidersParam.S3_BUCKET.value
+    )
     urls_dict = json.loads(file)
 
     # Date range for the url query strings
     ds = ctxt["ds"]
     d_range = (
-        (datetime(2015, 1, 1), START_DATE)
-        if FIRST_RUN
+        (datetime(2015, 1, 1), AirflowParam.START_DATE.value)
+        if AirflowParam.FIRST_RUN.value
         else (
             (datetime.strptime(ds, "%Y-%m-%d") - timedelta(days=1)).replace(
                 hour=0, minute=0, second=0, microsecond=0
@@ -52,7 +54,9 @@ def get_bond_data(bond_category, **ctxt):
 
     # Fetch urls
     s3 = S3Hook(aws_conn_id="aws_conn_id")
-    file = s3.read_key(key="data/full_urls_bonds.json", bucket_name=S3_BUCKET)
+    file = s3.read_key(
+        key="data/full_urls_bonds.json", bucket_name=ProvidersParam.S3_BUCKET.value
+    )
     full_urls = json.loads(file)
 
     # Fetching the ranged data

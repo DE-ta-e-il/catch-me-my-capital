@@ -7,14 +7,16 @@ import requests
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from bs4 import BeautifulSoup
 
-from brz_bonds_meta_monthly.constants import S3_BUCKET
+from brz_bonds_meta_monthly.constants import ProvidersParam
 from brz_bonds_meta_monthly.uploaders import upload_bonds_metadata_to_s3
 
 
 # Fetches urls data and returns category name and bond name
 def get_categories():
     s3 = S3Hook(aws_conn_id="aws_conn_id")
-    file = s3.read_key(key="data/urls_bonds.json", bucket_name=S3_BUCKET)
+    file = s3.read_key(
+        key="data/urls_bonds.json", bucket_name=ProvidersParam.S3_BUCKET.value
+    )
     res = json.loads(file)
     titles = {category: [bond_name for bond_name in res[category]] for category in res}
     return titles
@@ -24,7 +26,9 @@ def get_categories():
 def get_metadata(category, bond_name, **ctxt):
     # Fetch the urls file
     s3 = S3Hook(aws_conn_id="aws_conn_id")
-    file = s3.read_key(key="data/urls_bonds.json", bucket_name=S3_BUCKET)
+    file = s3.read_key(
+        key="data/urls_bonds.json", bucket_name=ProvidersParam.S3_BUCKET.value
+    )
     urls_dict = json.loads(file)
 
     # Bonds meta data crawling
