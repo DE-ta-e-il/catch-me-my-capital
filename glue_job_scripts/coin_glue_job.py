@@ -24,12 +24,12 @@ datasource0 = glueContext.create_dynamic_frame.from_catalog(
 # Glue DynamicFrame을 Spark DataFrame으로 변환
 df = datasource0.toDF()
 
-# Select the required columns and rename 'Close' to 'Price'
 selected_df = df.select(
     col("Close").alias("Price"),
     col("Quote_asset_volume"),
     col("Number_of_trades"),
     col("Symbol"),
+    col("ymd"),
 )
 
 # Spark DataFrame을 Glue DynamicFrame으로 변환
@@ -41,10 +41,9 @@ glueContext.write_dynamic_frame.from_options(
     connection_type="s3",
     connection_options={
         "path": "s3://team3-1-s3/silver/coin_data/fact_coin_data.parquet",
-        "partitionKeys": ["Date"],
+        "partitionKeys": ["ymd"],
     },
     format="parquet",
 )
 
-# Commit the job
 job.commit()
