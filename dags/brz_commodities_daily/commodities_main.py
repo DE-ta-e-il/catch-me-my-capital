@@ -30,7 +30,7 @@ with DAG(
     start_date=pendulum.datetime(2015, 1, 1),
     catchup=False,
     default_args=default_args,
-    tags=[Layer.BRONZE, Interval.DAILY, "commodities"],
+    tags=[Layer.BRONZE, Interval.DAILY.label, "commodities"],
 ) as dag:
     s3_hook = S3Hook(aws_conn_id=AWS_CONN_ID)
     commodities_pipeline = CommoditiesPipeline(TICKER_LIST, S3_BUCKET, s3_hook)
