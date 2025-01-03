@@ -22,4 +22,4 @@ jobs:
 
     - name: Upload Glue Script to S3
       run: |
-        aws s3 cp ./glue_job_scripts/* s3://${{ vars.AWS_BUCKET_NAME }}/glue_job_scripts_test/ --recursive
+        aws s3 cp ./glue_job_scripts/ s3://team3-1-s3/glue_job_scripts_test/ --recursive
