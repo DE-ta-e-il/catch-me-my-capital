@@ -18,8 +18,8 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION_NAME }}
+        aws-region: ${{ vars.AWS_REGION_NAME }}
 
     - name: Upload Glue Script to S3
       run: |
-        aws s3 cp ./glue_job_scripts/* s3://${{ env.AWS_BUCKET_NAME }}/glue_job_scripts_test/ --recursive
+        aws s3 cp ./glue_job_scripts/* s3://${{ vars.AWS_BUCKET_NAME }}/glue_job_scripts_test/ --recursive
