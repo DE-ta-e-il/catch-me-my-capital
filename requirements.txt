@@ -1,1 +1,3 @@
 yfinance==0.2.51
+requests
+bs4
