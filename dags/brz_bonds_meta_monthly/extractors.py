@@ -39,8 +39,9 @@ def get_metadata(category, bond_name, **ctxt):
         if len(cols) == 2:
             header = cols[0].text.strip()
             content = cols[1].text.strip()
-            data[header] = data.get(header, content)
-            data["name"] = bond_name
+            if content:
+                data[header] = data.get(header, content)
+                data["name"] = bond_name
 
     date = datetime.strptime(ctxt["ds"], "%Y-%m-%d").strftime("%Y-%m-%d")
     key = (f"bronze/{category}/ymd={date}/{category}_{bond_name}_meta_{date[:7]}.json",)

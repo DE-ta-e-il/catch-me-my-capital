@@ -46,7 +46,7 @@ def generate_urls(**ctxt):
 
 
 # A dynamic task template for fetching bond data from Business insider API
-def get_bond_data(bond_kind, **ctxt):
+def get_bond_data(bond_category, **ctxt):
     ds = ctxt["ds"]
     date = datetime.strptime(ds, "%Y-%m-%d").strftime("%Y-%m-%d")
 
@@ -56,8 +56,8 @@ def get_bond_data(bond_kind, **ctxt):
     full_urls = json.loads(file)
 
     # Fetching the ranged data
-    for target in full_urls[bond_kind]:
-        response = requests.get(full_urls[bond_kind][target])
+    for bond_kind in full_urls[bond_category]:
+        response = requests.get(full_urls[bond_category][bond_kind])
         time.sleep(3)
 
         # gbd: Short for grouped-by-day
@@ -65,12 +65,18 @@ def get_bond_data(bond_kind, **ctxt):
         for rec in response.json():
             date = rec["Date"]
             price = rec.pop("Close")
-            rec.update({"Price": price, "name": target})
+            rec.update(
+                {
+                    "Price": price,
+                    "name": bond_kind,
+                    "matures_in": int(bond_kind[-4:]) - int(bond_kind[-9:-5]),
+                }
+            )
             gbd[date[:10]].append(rec)
 
         if len(gbd) == 0:
             raise Exception("Nothing was fetched")
 
         for dt, daily_list in gbd.items():
-            key = f"bronze/{bond_kind}/ymd={dt}/{target}_{dt}.json"
+            key = f"bronze/{bond_category}/ymd={dt}/{bond_kind}_{dt}.json"
             upload_to_s3(daily_list, key)
