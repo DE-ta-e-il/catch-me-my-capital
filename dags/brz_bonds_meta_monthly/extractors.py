@@ -37,16 +37,16 @@ def get_metadata(category, bond_name, **ctxt):
     soup = BeautifulSoup(res.text, "html.parser")
     table = soup.find("table")  # there is only one table tag
 
-    data = {}
+    parsed = {}
     for row in table.find_all("tr"):
         cols = row.find_all("td")
         if len(cols) == 2:
-            header = cols[0].text.strip()
+            header = cols[0].text.strip().replace(" ", "_").lower()
             content = cols[1].text.strip()
             if content:
-                data[header] = data.get(header, content)
-                data["name"] = bond_name
+                parsed[header] = parsed.get(header, content)
+                parsed["name"] = bond_name
 
     date = datetime.strptime(ctxt["ds"], "%Y-%m-%d").strftime("%Y-%m-%d")
     key = f"bronze/{category}/ymd={date}/{category}_{bond_name}_meta_{date[:7]}.json"
-    upload_bonds_metadata_to_s3(data, key)
+    upload_bonds_metadata_to_s3(parsed, key)
