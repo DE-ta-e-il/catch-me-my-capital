@@ -13,8 +13,7 @@ def fetch_industry_codes(market, referer, mktId, **ctxt):
     For KRX KOSPI and KOSDAQ industry codes but it can be expanded(NOT compatible with GICS crawling).
     """
     # date validation
-    date = ctxt["ds"]
-    date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
+    date = datetime.strptime(ctxt["ds"], "%Y-%m-%d").strftime("%Y-%m-%d")
 
     url = "http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd"
     try:
@@ -36,7 +35,7 @@ def fetch_industry_codes(market, referer, mktId, **ctxt):
     except Exception as e:
         raise Exception(e)
 
-    time.sleep(10)
+    time.sleep(3)
 
     content = res.json()
     items = []
@@ -70,7 +69,7 @@ def crawl_industry_codes(**ctxt):
     """
     url = "https://en.wikipedia.org/wiki/Global_Industry_Classification_Standard#Classification"
     res = requests.get(url)
-    time.sleep(3)
+    time.sleep(2)
     soup = BeautifulSoup(res.text, "html.parser")
     time.sleep(2)
 
@@ -78,8 +77,6 @@ def crawl_industry_codes(**ctxt):
 
     # Industry codes lengths are 2, 4, 6, 8, and
     # each category code acts as the prefix(reference key) of the prior(higher) category
-    # so it would be safe to devide each category into tables
-    # hence the logic.
     # https://en.wikipedia.org/wiki/Global_Industry_Classification_Standard#Classification
     sectors, industry_group, industry, sub_industry = [], [], [], []
     for i, r in enumerate(rows):
@@ -95,8 +92,7 @@ def crawl_industry_codes(**ctxt):
             else:
                 sub_industry.append({"code": target, "name": name})
 
-    date = ctxt["ds"]
-    date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
+    date = datetime.strptime(ctxt["ds"], "%Y-%m-%d").strftime("%Y-%m-%d")
 
     for category, payload in {
         "sector": sectors,
