@@ -1,1 +1,3 @@
+yfinance
+requests
 bs4
