@@ -20,8 +20,8 @@ with DAG(
     dag_id="brz_economic_indicators_monthly",
     description="MONTHLY pipeline to acquire and store economic indicators.",
     schedule_interval="0 0 15 * *",
-    start_date=pendulum.datetime(2015, 1, 1),
-    catchup=False,
+    start_date=pendulum.datetime(2023, 1, 1),
+    catchup=True,
     default_args=default_args,
     tags=[Layer.BRONZE, Interval.MONTHLY.label, "economic_indicators"],
 ) as dag:
