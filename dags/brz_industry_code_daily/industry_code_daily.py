@@ -8,16 +8,16 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-from brz_industry_code_monthly.constants import MARKETS
-from brz_industry_code_monthly.extractors import (
+from brz_industry_code_daily.constants import MARKETS
+from brz_industry_code_daily.extractors import (
     crawl_industry_codes,
     fetch_industry_codes,
 )
 
 with DAG(
-    dag_id="brz_industry_code_month",
+    dag_id="brz_industry_code_daily",
     start_date=datetime(2024, 12, 1),
-    schedule_interval="0 0 1 * 1-5",
+    schedule_interval="0 0 * * 1-5",
     catchup=False,
     tags=["bronze"],
     description="A DAG that fetches industry(sector) codes for stocks.",
