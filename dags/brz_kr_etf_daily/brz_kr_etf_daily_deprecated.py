@@ -25,8 +25,8 @@ with DAG(
     tags=["bronze", "ETF", "daily", "weekday"],
     schedule="0 0 * * 1-5",
     start_date=datetime(2015, 1, 1),
-    end_date=datetime(2019, 12, 31),
-    catchup=False,
+    end_date=datetime(2015, 1, 15),
+    catchup=True,
 ) as dag:
     verify_market_open = ShortCircuitOperator(
         task_id="verify_market_open",
