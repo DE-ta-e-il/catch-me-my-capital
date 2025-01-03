@@ -27,8 +27,8 @@ with DAG(
     dag_id="brz_commodities_daily",
     description="Daily pipeline to acquire and store market data for commodities.",
     schedule="@daily",
-    start_date=pendulum.datetime(2015, 1, 1),
-    catchup=False,
+    start_date=pendulum.datetime(2024, 8, 1),
+    catchup=True,
     default_args=default_args,
     tags=[Layer.BRONZE, Interval.DAILY.label, "commodities"],
 ) as dag:
