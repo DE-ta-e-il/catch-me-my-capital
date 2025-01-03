@@ -22,7 +22,6 @@ with DAG(
     schedule="0 5 * * 1-5",
     start_date=datetime(2025, 12, 20),  # 과거 데이터는 별도로 한번에 처리
     catchup=True,
-    max_active_runs=3,
 ) as dag:
     verify_market_open = ShortCircuitOperator(
         task_id="verify_market_open",

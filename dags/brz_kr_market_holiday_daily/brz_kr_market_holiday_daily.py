@@ -22,7 +22,6 @@ with DAG(
     default_args=default_args,
     tags=["bronze", "market holiday", "daily"],
     catchup=True,
-    max_active_runs=3,
 ) as dag:
     fetch_krx_market_holiday_to_s3 = PythonOperator(
         task_id="fetch_kr_market_holiday_to_s3",
