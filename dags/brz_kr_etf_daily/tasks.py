@@ -95,7 +95,7 @@ def fetch_etf_from_krx_api_to_s3(ds_nodash, ds):
 
         params["pageNo"] = current_page + 1
 
-    data_str = json.dumps(all_items)
+    data_str = json.dumps(all_items, ensure_ascii=False)
     s3_key = generate_json_s3_key(ds)
 
     upload_string_to_s3(data_str, s3_key)
@@ -129,7 +129,7 @@ def fetch_etf_from_krx_web_to_s3(ds_nodash, ds):
             f"Data retrieval failed: 'output' is missing or empty. Full data: {data}"
         )
 
-    data_str = json.dumps(items)
+    data_str = json.dumps(items, ensure_ascii=False)
     s3_key = generate_json_s3_key(ds)
 
     upload_string_to_s3(data_str, s3_key)
