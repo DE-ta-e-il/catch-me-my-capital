@@ -9,7 +9,7 @@ from brz_industry_code_daily.constants import S3_BUCKET
 def upload_codes_to_s3(payload, key):
     s3 = S3Hook(aws_conn_id="aws_conn_id")
     s3.load_string(
-        string_data=json.dumps(payload),
+        string_data=json.dumps(payload, ensure_ascii=False),
         bucket_name=S3_BUCKET,
         key=key,
         replace=True,
