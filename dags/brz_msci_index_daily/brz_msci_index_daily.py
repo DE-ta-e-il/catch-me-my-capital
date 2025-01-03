@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from common.constants import Interval, Layer, Owner
+from common import Interval, Layer, Owner
 
 from brz_msci_index_daily import (
     MSCI_INDEX_DATA_S3_KEY,

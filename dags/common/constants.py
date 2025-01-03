@@ -1,9 +1,16 @@
-from enum import StrEnum
+from enum import Enum, StrEnum
 
 
-class Interval(StrEnum):
-    DAILY = "daily"
-    MONTHLY = "monthly"
+class Interval(Enum):
+    DAILY = ("D", "daily")
+    WEEKLY = ("W", "weekly")
+    MONTHLY = ("M", "monthly")
+    QUARTERLY = ("Q", "quarterly")
+    YEARLY = ("A", "yearly")
+
+    def __init__(self, code, label):
+        self.code = code
+        self.label = label
 
 
 class Owner(StrEnum):
@@ -18,3 +25,13 @@ class Layer(StrEnum):
     SILVER = "silver"
     GOLD = "gold"
     LANDING = "landing"
+
+
+class AwsConfig(StrEnum):
+    S3_BUCKET_KEY = "s3_bucket"
+    S3_PARTITION_KEY = "ymd"
+
+
+class ConnId(StrEnum):
+    AWS = "aws_conn_id"
+    BANK_OF_KOREA = "bank_of_korea_conn_id"

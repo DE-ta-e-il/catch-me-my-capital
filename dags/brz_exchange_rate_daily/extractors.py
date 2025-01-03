@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import yfinance as yf
-from common.uploaders import upload_file_to_s3
+from common import upload_file_to_s3
 
 
 def fetch_exchange_rates(

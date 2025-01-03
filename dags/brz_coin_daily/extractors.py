@@ -1,7 +1,7 @@
 import csv
 
 import requests
-from common.uploaders import upload_file_to_s3
+from common import upload_file_to_s3
 
 
 def fetch_coin_data(symbols, coin_tmp_file_path, coin_data_s3_key, **kwargs):
