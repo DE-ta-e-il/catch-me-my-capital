@@ -112,6 +112,8 @@ module "mwaa" {
   airflow_configuration_options = {
     "core.load_examples"         = "false"
     "webserver.dag_default_view" = "tree"
+    "secrets.backend"            = "airflow.providers.amazon.aws.secrets.secrets_manager.SecretsManagerBackend"
+    "secrets.backend_kwargs"     = "{\"connections_prefix\": \"airflow/connections\", \"variables_prefix\": \"airflow/variables\"}"
   }
 }
 
