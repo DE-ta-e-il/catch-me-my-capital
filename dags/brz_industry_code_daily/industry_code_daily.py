@@ -16,7 +16,7 @@ from brz_industry_code_daily.extractors import (
 
 with DAG(
     dag_id="brz_industry_code_daily",
-    start_date=datetime(2024, 12, 1),
+    start_date=datetime(2024, 12, 25),
     schedule_interval="0 0 * * 1-5",
     catchup=False,
     tags=["bronze"],

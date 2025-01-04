@@ -1,19 +1,22 @@
-# TODO: Redshift auto-column-appending-function (created at etc etc)
-# TODO: Redshift connection .env
-# TODO: Add crawl exclusion on GICS
+# TODO: ⬜Redshift auto-column-appending-function (created at etc etc)
+# TODO: 🟨Redshift connection .env
+# TODO: 🟨Add crawl exclusion on GICS -> 'Create a single schema for each S3 path' option checked
+# TODO: Fix the sensor...
 # NOTE: This was helpful : https://github.com/navin5556/aws-glue-etl-project/blob/main/python_script/MyGlueInsertRedshift.py
+import json
 import sys
 
+import boto3
 from awsglue.context import GlueContext
 from awsglue.dynamicframe import DynamicFrame
 from awsglue.job import Job
 from awsglue.transforms import *
 from awsglue.utils import getResolvedOptions
+from botocore.exceptions import ClientError
 from pyspark.context import SparkContext
-from pyspark.sql.functions import col
 
+#  Glue job validation
 args = getResolvedOptions(sys.argv, ["JOB_NAME"])
-
 sc = SparkContext()
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
@@ -58,16 +61,37 @@ WriteToS3_node2 = glueContext.write_dynamic_frame.from_options(
     transformation_ctx="WriteToS3_node2",
 )
 
+
+# Secret test
+def get_secret():
+    secret_name = "team3-1-redshift-access"  # pragma: allowlist secret
+    region_name = "ap-northeast-2"
+
+    session = boto3.session.Session()
+    client = session.client(service_name="secretsmanager", region_name=region_name)
+
+    try:
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+    except ClientError as e:
+        raise e
+
+    secret = json.loads(get_secret_value_response["SecretString"])
+    return secret["username"], secret["password"]
+
+
+secrets = get_secret()
+
 # Write to Redshift
 WriteToRedshift_node3 = glueContext.write_dynamic_frame.from_options(
     frame=dynamic_frame,
     connection_type="redshift",
     connection_options={
+        "url": "jdbc:redshift://team3-1-cluster.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com:5439/dev",
+        "user": secrets[0],
+        "password": secrets[1],
+        "dbtable": "dim_industry_code",
         "redshiftTmpDir": "s3://team3-1-s3/data/",
-        "useConnectionProperties": "true",
-        "dbtable": "tunacome.dim_industry_code",
-        "connectionName": "redshift_conn_id",
-        "preactions": "CREATE TABLE IF NOT EXISTS tunacome.dim_industry_code (item_code VARCHAR, item_name VARCHAR, industry_code VARCHAR, market VARCHAR);",
+        "preactions": "CREATE TABLE IF NOT EXISTS dim_industry_code (item_code VARCHAR, item_name VARCHAR, industry_code VARCHAR, market VARCHAR);",
     },
     transformation_ctx="WriteToRedshift_node3",
 )

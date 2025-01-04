@@ -1,3 +1,4 @@
+import json
 import time
 from datetime import datetime
 
@@ -59,7 +60,8 @@ def fetch_industry_codes(market, referer, mktId, **ctxt):
         raise Exception("NOPE NOT GETTING ANY")
 
     key = f"bronze/industry_code/ymd={date}/krx_codes_{date}.json"
-    upload_codes_to_s3(new_items, key)
+    stringified = json.dumps(new_items, indent=4)
+    upload_codes_to_s3(stringified, key)
 
 
 # For crawling GICS
@@ -105,4 +107,5 @@ def crawl_industry_codes(**ctxt):
         "sub_industry": sub_industry,
     }.items():
         key = f"bronze/industry_code/ymd={date}/gics_{category}_codes_{date}.json"
-        upload_codes_to_s3(payload, key)
+        stringified = json.dumps(payload, indent=4)
+        upload_codes_to_s3(stringified, key)

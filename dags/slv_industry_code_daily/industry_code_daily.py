@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import BranchPythonOperator
@@ -20,10 +22,12 @@ must_crawl = AirflowParam.TO_CRAWL.value
 with DAG(
     dag_id="slv_industry_code_daily",
     default_args=default_args,
-    schedule_interval=None,
+    start_date=datetime(2024, 12, 25),
+    schedule_interval="0 0 * * 1-5",
     catchup=False,
     tags=["bronze"],
 ) as dag:
+    # TODO: Is it better to utilize a sub-DAG?
     wait = ExternalTaskSensor(
         task_id="wait_brz_industry_code_daily",
         external_dag_id="brz_industry_code_daily",
@@ -31,7 +35,6 @@ with DAG(
         timeout=600,
         allowed_states=["success"],
         failed_states=["failed", "skipped"],
-        mode="reschedule",
         poke_interval=60,
     )
 
