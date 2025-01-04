@@ -71,10 +71,20 @@ class YFinanceOperator(PythonOperator):
             .reset_index()
         )
 
-        if data.empty:
+        row_count = data.shape[0]
+        if row_count == 0:
             raise AirflowSkipException("No data available for the given date range.")
 
-        self.log.info(f"Fetched {data.shape[0]} rows.")
+        # TODO: 휴장일 데이터를 활용해 누락된 티커가 거래소 휴장일 때문인지, 데이터 소스 문제인지 검증하는 로직이 필요합니다.
+        if row_count != len(self.tickers):
+            missing_tickers = set(self.tickers) - set(data["ticker"])
+            self.log.warning(
+                f"Data mismatch detected: Expected {len(self.tickers)} tickers, "
+                f"but fetched {row_count} rows. Missing tickers: {missing_tickers}. "
+            )
+        else:
+            self.log.info(f"Successfully fetched {row_count} rows.")
+
         return data
 
     def _upload_data_to_s3(self, data: pd.DataFrame, s3_key: str) -> None:
