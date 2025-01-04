@@ -60,7 +60,7 @@ def fetch_industry_codes(market, referer, mktId, **ctxt):
         raise Exception("NOPE NOT GETTING ANY")
 
     key = f"bronze/industry_code/ymd={date}/krx_codes_{date}.json"
-    stringified = json.dumps(new_items, indent=4)
+    stringified = json.dumps(new_items, indent=4, ensure_ascii=False)
     upload_codes_to_s3(stringified, key)
 
 
