@@ -6,6 +6,7 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.sensors.external_task import ExternalTaskMarker
 from airflow.utils.task_group import TaskGroup
 
 from brz_industry_code_daily.constants import MARKETS
@@ -41,6 +42,13 @@ with DAG(
         python_callable=crawl_industry_codes,
     )
 
+    clear_downstream_external_task = ExternalTaskMarker(
+        task_id="external_task_clearance",
+        external_dag_id="slv_industry_code_daily",
+        external_task_id="wait_brz_industry_code_daily",
+    )
+
     # Max active tasks needed = 3 😨 I have faith in my rig!
     kospi_kosdaq_group
     gics_codes_fetcher
+    [kospi_kosdaq_group, gics_codes_fetcher] >> clear_downstream_external_task

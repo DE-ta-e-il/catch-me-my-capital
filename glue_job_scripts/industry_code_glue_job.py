@@ -1,7 +1,4 @@
-# TODO: ⬜Redshift auto-column-appending-function (created at etc etc)
-# TODO: 🟨Redshift connection .env
-# TODO: 🟨Add crawl exclusion on GICS -> 'Create a single schema for each S3 path' option checked
-# TODO: Fix the sensor...
+# TODO: 🟨Redshift null values problem: Do run test
 # NOTE: This was helpful : https://github.com/navin5556/aws-glue-etl-project/blob/main/python_script/MyGlueInsertRedshift.py
 import json
 import sys
@@ -14,6 +11,7 @@ from awsglue.transforms import *
 from awsglue.utils import getResolvedOptions
 from botocore.exceptions import ClientError
 from pyspark.context import SparkContext
+from pyspark.sql.functions import current_timestamp
 
 #  Glue job validation
 args = getResolvedOptions(sys.argv, ["JOB_NAME"])
@@ -23,9 +21,10 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 
+# Copy paste this if GICS needs to be silver screened ;P
 LoadFromGlueDB_node1 = glueContext.create_dynamic_frame.from_catalog(
     database="team3-db",
-    table_name="industry_code",
+    table_name="krx_codes",
     # The state of the job is distinguished by this 'id', to quote, a "bookmark"
     # NOTE: 'Job bookmark' section  must be enabled for this to work
     # Same as task ids in airflow??
@@ -47,8 +46,12 @@ silver_df = spark.sql("""
         brz_industry_code
 """)
 
+stamped = silver_df.withColumn("created_at", current_timestamp()).withColumn(
+    "updated_at", current_timestamp()
+)
+
 # Revert back to DynamicFrame
-dynamic_frame = DynamicFrame.fromDF(silver_df, glueContext, "dynamic_frame")
+dynamic_frame = DynamicFrame.fromDF(stamped, glueContext, "dynamic_frame")
 
 # Write object to S3
 WriteToS3_node2 = glueContext.write_dynamic_frame.from_options(
@@ -90,8 +93,8 @@ WriteToRedshift_node3 = glueContext.write_dynamic_frame.from_options(
         "user": secrets[0],
         "password": secrets[1],
         "dbtable": "dim_industry_code",
-        "redshiftTmpDir": "s3://team3-1-s3/data/",
-        "preactions": "CREATE TABLE IF NOT EXISTS dim_industry_code (item_code VARCHAR, item_name VARCHAR, industry_code VARCHAR, market VARCHAR);",
+        "redshiftTmpDir": "s3://team3-1-s3/data/redshift_temp/",
+        "preactions": "DROP TABLE IF EXISTS dim_industry_code; CREATE TABLE dim_industry_code (item_code VARCHAR, item_name VARCHAR, industry_code VARCHAR, market VARCHAR, created_at TIMESTAMP, updated_at TIMESTAMP);",
     },
     transformation_ctx="WriteToRedshift_node3",
 )
