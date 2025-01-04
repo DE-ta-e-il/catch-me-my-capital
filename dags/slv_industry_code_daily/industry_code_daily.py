@@ -69,7 +69,7 @@ with DAG(
     run_glue_job = GlueJobOperator(
         task_id="industry_code_job",
         job_name="slv_industry_code_daily",
-        script_location="s3://team3-1-s3/glue_job_scripts/industry_code_job.py",
+        script_location="s3://team3-1-s3/glue_job_scripts/industry_code_glue_job.py",
         region_name="ap-northeast-2",
         iam_role_name="AWSGlueServiceRole-Team3-1",
         num_of_dpus=2,
