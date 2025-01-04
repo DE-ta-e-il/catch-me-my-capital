@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import BranchPythonOperator
@@ -20,7 +18,7 @@ default_args = {
 must_crawl = AirflowParam.TO_CRAWL.value
 
 with DAG(
-    dag_id="slv_coin_daily",
+    dag_id="slv_industry_code_daily",
     default_args=default_args,
     schedule_interval=None,
     catchup=False,
