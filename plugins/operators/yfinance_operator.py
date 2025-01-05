@@ -15,9 +15,9 @@ class YFinanceOperator(PythonOperator):
     S3_KEY_TEMPLATE = "{layer}/{category}/{partition_key}={date}/data.csv"
 
     def __init__(self, category: str, tickers: List[str], *args, **kwargs):
+        super().__init__(python_callable=self.fetch_price_data, *args, **kwargs)
         self.category = category
         self.tickers = tickers
-        super().__init__(python_callable=self.fetch_price_data, *args, **kwargs)
 
     def fetch_price_data(
         self,
@@ -25,17 +25,15 @@ class YFinanceOperator(PythonOperator):
         data_interval_end: pendulum.DateTime,
     ) -> None:
         """
-        yFinance에서 데이터를 가져와 S3에 업로드하는 작업을 수행합니다.
+        yfinance에서 데이터를 가져와 S3에 업로드하는 작업을 수행합니다.
 
         Args:
-            data_interval_start (pendulum.DateTime): 데이터 수집 시작 날짜
-            data_interval_end (pendulum.DateTime): 데이터 수집 종료 날짜
+            data_interval_start (pendulum.DateTime): 데이터 수집 시작 시점
+            data_interval_end (pendulum.DateTime): 데이터 수집 종료 시점 (포함되지 않음)
         """
 
-        start_date, end_date = data_interval_start.date(), data_interval_end.date()
-
-        self.log.info(f"Fetching: category: {self.category}, tickers: {self.tickers}")
-        self.log.info(f"Date range: {start_date} to {end_date}")
+        start_date = data_interval_start.strftime("%Y-%m-%d")
+        end_date = data_interval_end.strftime("%Y-%m-%d")
 
         data = self._fetch_price_data_from_yfinance(start_date, end_date)
 
@@ -51,15 +49,18 @@ class YFinanceOperator(PythonOperator):
         self, start_date: str, end_date: str
     ) -> pd.DataFrame:
         """
-        yFinance에서 데이터를 가져옵니다.
+        yfinance에서 데이터를 가져옵니다.
 
         Args:
-            start_date (str): 데이터 수집 시작 날짜 (YYYY-MM-DD)
-            end_date (str): 데이터 수집 종료 날짜 (YYYY-MM-DD, 포함되지 않음)
+            start_date (str): 데이터 수집 시작 날짜
+            end_date (str): 데이터 수집 종료 날짜 (포함되지 않음)
 
         Returns:
             pd.DataFrame: 수집된 데이터
         """
+
+        self.log.info(f"Fetching: category: {self.category}, tickers: {self.tickers}")
+        self.log.info(f"Date range: {start_date} to {end_date}")
 
         data = (
             # NOTE: yfinance에서는 다양한 시간 간격으로 집계된 데이터를 제공하지만,
@@ -89,7 +90,8 @@ class YFinanceOperator(PythonOperator):
                 f"but fetched {len(fetched_tickers)} rows. Missing tickers: {missing_tickers}. "
             )
         else:
-            self.log.info(f"Successfully fetched {len(fetched_tickers)} rows.")
+            self.log.info(f"Fetched: {data.shape[0]} rows, {data.shape[1]} columns")
+            self.log.info(f"Sample data:\n{data.head()}")
 
         return data
 
