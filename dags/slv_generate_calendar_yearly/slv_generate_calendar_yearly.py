@@ -27,7 +27,7 @@ with DAG(
     dag_id="slv_generate_calendar_yearly",
     description="내년 기본 캘린더 생성",
     schedule="0 0 1 12 *",
-    start_date=datetime(2014, 12, 1),
+    start_date=datetime(2013, 12, 1),
     default_args=default_args,
     tags=[Layer.SILVER, "calender", Interval.YEARLY.label, "Redshift"],
     catchup=True,
@@ -58,7 +58,7 @@ with DAG(
         database=REDSHIFT_DB,
         db_user=REDSHIFT_USER,
         sql=CALL_CALENDAR_PROCEDURE_SQL,
-        parameters=[{"name": "calendar_year", "value": "{{ logical_date.year + 1 }}"}],
+        parameters=[{"name": "calendar_year", "value": "{{ logical_date.year + 2 }}"}],
     )
 
     create_calendar_table >> create_calendar_procedure >> generate_next_year_calendar
