@@ -65,25 +65,31 @@ class YFinanceOperator(PythonOperator):
             # NOTE: yfinance에서는 다양한 시간 간격으로 집계된 데이터를 제공하지만,
             # 여기서는 일 단위 데이터(interval="1d")만 사용합니다.
             yf.download(
-                tickers=self.tickers, start=start_date, end=end_date, interval="1d"
+                tickers=self.tickers,
+                start=start_date,
+                end=end_date,
+                interval="1d",
             )
-            .stack(level=1)
+            .stack(level=1, future_stack=True)
             .reset_index()
+            .rename_axis(None, axis=1)
         )
 
-        row_count = data.shape[0]
-        if row_count == 0:
+        if data.empty:
             raise AirflowSkipException("No data available for the given date range.")
 
-        # TODO: 휴장일 데이터를 활용해 누락된 티커가 거래소 휴장일 때문인지, 데이터 소스 문제인지 검증하는 로직이 필요합니다.
-        if row_count != len(self.tickers):
-            missing_tickers = set(self.tickers) - set(data["ticker"])
+        fetched_tickers = set(data[data["Close"].notna()]["Ticker"])
+        missing_tickers = set(self.tickers) - fetched_tickers
+
+        # TODO: 향후 휴장일 정보(뉴욕상업거래소, ICE 등)를 추가 수집하여
+        # 누락된 데이터가 거래소 휴장일 때문인지, 데이터 소스 문제인지 검증하는 로직을 구현해야 합니다.
+        if missing_tickers:
             self.log.warning(
-                f"Data mismatch detected: Expected {len(self.tickers)} tickers, "
-                f"but fetched {row_count} rows. Missing tickers: {missing_tickers}. "
+                f"Data mismatch detected: Tried to fetch {len(self.tickers)} tickers, "
+                f"but fetched {len(fetched_tickers)} rows. Missing tickers: {missing_tickers}. "
             )
         else:
-            self.log.info(f"Successfully fetched {row_count} rows.")
+            self.log.info(f"Successfully fetched {len(fetched_tickers)} rows.")
 
         return data
 
