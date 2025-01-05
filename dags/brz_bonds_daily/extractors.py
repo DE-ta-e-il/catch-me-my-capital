@@ -67,21 +67,8 @@ def get_bond_data(bond_category, **ctxt):
         # gbd: Short for grouped-by-day
         gbd = defaultdict(list)
         for rec in response.json():
-            date = rec.pop["Date"]
-            # To lower snake cases
-            rec.update(
-                {
-                    "date": date,
-                    "name": bond_kind,
-                    "price": rec.pop("Close"),
-                    "open": rec.pop("Open"),
-                    "high": rec.pop("High"),
-                    "low": rec.pop("Low"),
-                    "volume": rec.pop("Volume"),
-                    "matures_in": int(bond_kind[-4:]) - int(bond_kind[-9:-5]),
-                }
-            )
-            rec.pop("Estimate")
+            date = rec["Date"]
+            # Add necessary info
             gbd[date[:10]].append(rec)
 
         if len(gbd) == 0:
