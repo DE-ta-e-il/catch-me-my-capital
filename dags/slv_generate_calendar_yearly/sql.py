@@ -1,8 +1,8 @@
-from airflow.models import Variable
+from common.constants import Redshift
 
-SCHEMA = Variable.get("redshift_silver_schema")
-CALENDAR_TABLE_NAME = "dim_calendar"
-CALENDER_PROCEDURE_NAME = "generate_dim_calendar_of_year"
+SCHEMA = Redshift.SchemaName.SILVER
+CALENDAR_TABLE_NAME = Redshift.TableName.DIM_CALENDAR
+CALENDAR_PROCEDURE_NAME = "generate_dim_calendar_of_year"
 
 
 CREATE_CALENDAR_TABLE_SQL = f"""
@@ -24,7 +24,7 @@ CREATE_CALENDAR_TABLE_SQL = f"""
 """
 
 CREATE_CALENDAR_PRECEDURE_SQL = f"""
-CREATE OR REPLACE PROCEDURE {SCHEMA}.{CALENDER_PROCEDURE_NAME}(input_year INTEGER)
+CREATE OR REPLACE PROCEDURE {SCHEMA}.{CALENDAR_PROCEDURE_NAME}(input_year INTEGER)
 AS $$
 DECLARE
     start_date DATE := (CAST(input_year || '-01-01' AS DATE));
@@ -80,3 +80,7 @@ begin
 end;
 $$ LANGUAGE plpgsql;
 """
+
+CALL_CALENDAR_PROCEDURE_SQL = (
+    f"CALL {SCHEMA}.{CALENDAR_PROCEDURE_NAME}(:calendar_year);"
+)
