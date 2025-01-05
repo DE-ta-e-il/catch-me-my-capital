@@ -1,4 +1,3 @@
-# TODO: 🟨Redshift null values problem: Do run test
 # NOTE: This was helpful : https://github.com/navin5556/aws-glue-etl-project/blob/main/python_script/MyGlueInsertRedshift.py
 import json
 import sys
