@@ -31,7 +31,7 @@ def fetch_msci_indices_data(
         response = requests.get(url)
         if response.status_code == 200:
             data = response.json()
-            data[0]["Index"] = index_name
+            data[0]["Index_Name"] = index_name
             # Date를 파티션 키로 사용할 경우 충돌을 피하기 위해 칼럼 이름 변경
             data[0]["RecordDate"] = data[0].pop("Date")
             all_data.extend(data)
@@ -42,7 +42,7 @@ def fetch_msci_indices_data(
 
     # JSON 포맷으로 저장
     with open(msci_index_tmp_file_path, "w") as jsonfile:
-        json.dump(all_data, jsonfile)
+        json.dump(all_data, jsonfile, indent=4)
 
     # S3에 업로드
     upload_file_to_s3(
