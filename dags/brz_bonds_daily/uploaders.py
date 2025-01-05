@@ -6,10 +6,10 @@ from brz_bonds_daily.constants import ProvidersParam
 
 
 # Bonds uploader: this one is not a task.
-def upload_to_s3(payload: dict, key: str):
+def upload_to_s3(payload: str, key: str):
     s3 = S3Hook(aws_conn_id="aws_conn_id")
     s3.load_string(
-        string_data=json.dumps(payload),
+        string_data=payload,
         bucket_name=ProvidersParam.S3_BUCKET.value,
         key=key,
         replace=True,

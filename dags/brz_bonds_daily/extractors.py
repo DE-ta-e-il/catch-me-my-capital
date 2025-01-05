@@ -43,8 +43,7 @@ def generate_urls(**ctxt):
         }
         for bond_kind in urls_dict
     }
-
-    upload_to_s3(full_urls, "data/full_urls_bonds.json")
+    upload_to_s3(json.dumps(full_urls, indent=4), "data/full_urls_bonds.json")
 
 
 # A dynamic task template for fetching bond data from Business insider API
@@ -76,4 +75,5 @@ def get_bond_data(bond_category, **ctxt):
 
         for dt, daily_list in gbd.items():
             key = f"bronze/{bond_category}/ymd={dt}/{bond_kind}_{dt}.json"
-            upload_to_s3(daily_list, key)
+            payload = json.dumps(daily_list, indent=4)
+            upload_to_s3(payload, key)
