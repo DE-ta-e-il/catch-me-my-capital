@@ -4,18 +4,22 @@ It has been replaced by 'brz_kr_etf_daily', which performs the same operations.
 Please remove any references to this DAG and use 'brz_kr_etf_daily' going forward.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator, ShortCircuitOperator
 from common.constants import Interval, Layer, Owner
 
-from brz_kr_etf_daily.tasks import (
+from brz_kr_etf_daily.tasks_deprecated import (
     fetch_etf_from_krx_web_to_s3,
     verify_market_open,
 )
 
-default_args = {"owner": Owner.JUNGMIN}
+default_args = {
+    "owner": Owner.JUNGMIN,
+    "retries": 3,
+    "retry_delay": timedelta(minutes=10),
+}
 
 with DAG(
     dag_id="brz_kr_etf_daily_deprecated",
@@ -25,8 +29,8 @@ with DAG(
     schedule="0 0 * * 1-5",
     start_date=datetime(2015, 1, 1),
     end_date=datetime(2019, 12, 31),
-    catchup=False,
-    max_active_runs=5,
+    catchup=True,
+    max_active_runs=3,
 ) as dag:
     verify_market_open = ShortCircuitOperator(
         task_id="verify_market_open",

@@ -1,72 +1,46 @@
 import json
-import xml.etree.ElementTree as ET
 from datetime import datetime
 
 import requests
-from airflow.exceptions import AirflowFailException
 from airflow.models import Variable
 from common.s3_utils import upload_string_to_s3
-
-
-# TODO: Temporary function. This will be removed in the future.
-def is_kr_market_open_today(today: datetime) -> bool:
-    """
-    TEMPORARY: This function is currently used as a placeholder for future functionality.
-    It will be removed once the new feature is implemented.
-
-    Note: Remove after [date or milestone].
-    """
-    year = today.strftime("%Y")
-    month = today.strftime("%m")
-    today_nodash = today.strftime("%Y%m%d")
-
-    url = (
-        "http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo"
-    )
-    params = {
-        "solYear": year,
-        "solMonth": month,
-        "serviceKey": Variable.get("data_kr_service_key"),
-    }
-
-    response = requests.get(url, params=params)
-    root = ET.fromstring(response.text)
-    # 모든 <locdate> 태그의 값 추출
-    locdates = [item.text for item in root.findall(".//locdate")]
-
-    if int(month) == 12:
-        last_weekday = datetime(today.year, 12, 31)
-
-        while last_weekday.weekday() > 4:
-            last_weekday -= datetime.timedelta(days=1)
-
-        last_weekday_nodash = last_weekday.strftime("%Y%m%d")
-        locdates.append(last_weekday_nodash)
-
-    # today와 일치하는 값이 있는지 확인 -> 휴장일
-    if today_nodash in locdates:
-        return False
-    else:
-        return True
 
 
 def generate_json_s3_key(today_dash: str) -> str:
     return f"bronze/kr_etf/ymd={today_dash}/data.json"
 
 
-def verify_market_open(ds_nodash):
-    date = datetime.strptime(ds_nodash, "%Y%m%d")
-    return is_kr_market_open_today(date)
+def verify_market_open(**kwargs):
+    calendar_result = kwargs["ti"].xcom_pull(
+        key="return_value", task_ids="get_workday_info"
+    )
+
+    records = calendar_result["Records"][0]  # 첫 번째 레코드 (하나만 있음)
+
+    today_is_holiday = records[1]["booleanValue"]
+    previous_working_day = records[2]["stringValue"]  # yyyy-mm-dd
+
+    if today_is_holiday:
+        return False
+    else:
+        kwargs["ti"].xcom_push(key="previous_working_day", value=previous_working_day)
+        return True
 
 
-def fetch_etf_from_krx_api_to_s3(ds_nodash, ds):
+def fetch_etf_from_krx_api_to_s3(**kwargs):
+    target_date = kwargs["ti"].xcom_pull(
+        key="previous_working_day", task_ids="verify_market_open"
+    )
+    date_obj = datetime.strptime(target_date, "%Y-%m-%d")
+    target_date_nodash = date_obj.strftime("%Y%m%d")
+
     url = "http://apis.data.go.kr/1160100/service/GetSecuritiesProductInfoService/getETFPriceInfo"
     params = {
         "serviceKey": Variable.get("data_kr_service_key"),
         "numOfRows": 1000,
         "pageNo": 1,
         "resultType": "json",
-        "basDt": ds_nodash,
+        "basDt": target_date_nodash,
     }
 
     all_items = []
@@ -75,7 +49,7 @@ def fetch_etf_from_krx_api_to_s3(ds_nodash, ds):
         response = requests.get(url, params=params)
 
         if response.status_code != 200:
-            raise AirflowFailException(
+            raise Exception(
                 f"Failed to fetch API: {response.status_code}, {response.text}"
             )
 
@@ -95,41 +69,7 @@ def fetch_etf_from_krx_api_to_s3(ds_nodash, ds):
 
         params["pageNo"] = current_page + 1
 
-    data_str = json.dumps(all_items)
-    s3_key = generate_json_s3_key(ds)
-
-    upload_string_to_s3(data_str, s3_key)
-
-
-def fetch_etf_from_krx_web_to_s3(ds_nodash, ds):
-    url = "http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd"
-    data = {
-        "bld": "dbms/MDC/STAT/standard/MDCSTAT04301",
-        "locale": "ko_KR",
-        "trdDd": ds_nodash,
-        "share": 1,
-        "money": 1,
-        "csvxls_isNo": False,
-    }
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.5938.132 Safari/537.36",
-        "Referer": "http://data.krx.co.kr/contents/MDC/MDI/mdiLoader/index.cmd?menuId=MDC0201020203",
-    }
-
-    response = requests.post(url, data=data, headers=headers)
-
-    if response.status_code != 200:
-        raise Exception(f"Failed to fetch API: {response.status_code}, {response.text}")
-
-    data = response.json()
-    items = data.get("output")
-
-    if not items:
-        raise Exception(
-            f"Data retrieval failed: 'output' is missing or empty. Full data: {data}"
-        )
-
-    data_str = json.dumps(items)
-    s3_key = generate_json_s3_key(ds)
+    data_str = json.dumps(all_items, ensure_ascii=False)
+    s3_key = generate_json_s3_key(target_date)
 
     upload_string_to_s3(data_str, s3_key)
