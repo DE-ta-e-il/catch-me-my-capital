@@ -20,7 +20,7 @@ with DAG(
     schedule="@daily",
     start_date=datetime(2025, 1, 1),
     default_args=default_args,
-    tags=[Layer.BRONZE, "market holiday", Interval.DAILY],
+    tags=[Layer.BRONZE, "market holiday", Interval.DAILY.label],
     catchup=True,
     max_active_runs=3,
 ) as dag:
