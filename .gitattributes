@@ -5,4 +5,4 @@
 *.yaml text eol=lf
 *.yml text eol=lf
 *.tf text eol=lf
-*.tfvars text eol=lf 
+*.tfvars text eol=lf

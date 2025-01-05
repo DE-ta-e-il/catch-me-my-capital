@@ -1,14 +1,10 @@
-# This DAG is for collecting industry codes for KOSPI, KOSDAQ, and the DICS standard
-# This DAG does full refresh every month.
-# TODO: Use airflow.models.connection to manage connections once AWS secrets manager is utilized.
-
 from datetime import datetime
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-from brz_industry_code_daily.constants import MARKETS
+from brz_industry_code_daily.constants import MarketParam
 from brz_industry_code_daily.extractors import (
     crawl_industry_codes,
     fetch_industry_codes,
@@ -25,7 +21,7 @@ with DAG(
     max_active_tasks=3,
 ) as dag:
     with TaskGroup("kospi_kosdaq_codes_task_group") as kospi_kosdaq_group:
-        markets = MARKETS
+        markets = MarketParam.MARKETS.value
 
         for market, codes in markets.items():
             krx_codes_fetcher = PythonOperator(
