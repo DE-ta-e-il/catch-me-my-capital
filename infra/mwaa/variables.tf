@@ -60,3 +60,10 @@ variable "aws_conn_pw" {
   default     = ""
   sensitive   = true
 }
+
+variable "aws_s3_bucket_name" {
+  description = "S3 버킷 이름"
+  type        = string
+  default     = ""
+  sensitive   = true
+}

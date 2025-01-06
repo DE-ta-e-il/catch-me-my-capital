@@ -4,7 +4,7 @@ resource "aws_secretsmanager_secret" "S3_BUCKET" {
 
 resource "aws_secretsmanager_secret_version" "S3_BUCKET" {
   secret_id     = aws_secretsmanager_secret.S3_BUCKET.id
-  secret_string = ""
+  secret_string = var.aws_s3_bucket_name
 }
 
 resource "aws_secretsmanager_secret" "aws_conn_id" {
