@@ -40,7 +40,8 @@ silver_df = spark.sql("""
         item_code,
         item_name,
         industry_code,
-        market
+        market,
+        TO_DATE(issue_date, 'yyyy-MM-dd') AS issue_date
     FROM
         brz_industry_code
 """)
@@ -53,6 +54,7 @@ stamped = silver_df.withColumn("created_at", current_timestamp()).withColumn(
 dynamic_frame = DynamicFrame.fromDF(stamped, glueContext, "dynamic_frame")
 
 # Write object to S3
+# Parquet gets overwritten with new data
 WriteToS3_node2 = glueContext.write_dynamic_frame.from_options(
     frame=dynamic_frame,
     connection_type="s3",
@@ -93,7 +95,7 @@ WriteToRedshift_node3 = glueContext.write_dynamic_frame.from_options(
         "password": secrets[1],
         "dbtable": "dim_industry_code",
         "redshiftTmpDir": "s3://team3-1-s3/data/redshift_temp/",
-        "preactions": "DROP TABLE IF EXISTS dim_industry_code; CREATE TABLE dim_industry_code (item_code VARCHAR, item_name VARCHAR, industry_code VARCHAR, market VARCHAR, created_at TIMESTAMP, updated_at TIMESTAMP);",
+        "preactions": "DROP TABLE IF EXISTS dim_industry_code; CREATE TABLE dim_industry_code (item_code VARCHAR, item_name VARCHAR, industry_code VARCHAR, market VARCHAR, created_at TIMESTAMP, updated_at TIMESTAMP, issue_date DATE);",
     },
     transformation_ctx="WriteToRedshift_node3",
 )

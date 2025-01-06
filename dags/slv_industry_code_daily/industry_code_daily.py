@@ -1,15 +1,14 @@
-from datetime import datetime
-
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow.providers.amazon.aws.operators.glue_crawler import GlueCrawlerOperator
-from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.sensors.s3_key_sensor import S3KeySensor
 from airflow.utils.task_group import TaskGroup
-from slv_industry_code_daily.constants import AirflowParam
+from slv_industry_code_daily.constants import AirflowParam, ProvidersParam
 from slv_industry_code_daily.helpers import to_crawl_or_not_to_crawl
 
+# GICS codes are not used
 # Some tasks get skipped by the branch operator. 'all-success' rule might break this DAG?
 # https://www.marclamberti.com/blog/airflow-trigger-rules-all-you-need-to-know/#Solving_the_BranchPythonOperator_pitfall
 default_args = {
@@ -23,18 +22,19 @@ must_crawl = AirflowParam.TO_CRAWL.value
 with DAG(
     dag_id="slv_industry_code_daily",
     default_args=default_args,
-    start_date=datetime(2024, 12, 25),
     schedule_interval="0 0 * * 1-5",
-    catchup=False,
+    catchup=True,
     tags=["bronze"],
     max_active_tasks=2,
 ) as dag:
     # TODO: Is it better to utilize a sub-DAG?
-    wait = ExternalTaskSensor(
-        task_id="wait_brz_industry_code_daily",
-        external_dag_id="brz_industry_code_daily",
+    wait = S3KeySensor(
+        bucket_name=ProvidersParam.S3_BUCKET.value,
+        bucket_key="bronze/industry_code/krx_codes/ymd={{ ds }}/krx_codes_{{ ds }}.json",
+        poke_interval=60,
         timeout=600,
-        mode="reschedule",
+        task_id="wait_brz_industry_code_daily",
+        mode="reschedule",  # poke mode takes up a worker slot while waiting.
     )
 
     # But should it be a separate DAG?
@@ -42,7 +42,8 @@ with DAG(
         task_id="divergent_actions_facilitator_lol",
         python_callable=to_crawl_or_not_to_crawl,
         op_args=[
-            AirflowParam.TO_CRAWL.value,
+            "{{ ds }}",
+            AirflowParam.START_DATE.value,
             "crawler_group",
             "dummy_lives_matter",
         ],
@@ -52,7 +53,7 @@ with DAG(
         crawl_for_krx_schema = GlueCrawlerOperator(
             task_id="crawler_krx_industry_codes",
             config={
-                "Name": "team3-crawler",
+                "Name": "Team3-test",
                 "Role": "AWSGlueServiceRole-Team3-1",
                 "DatabaseName": "team3-db",
                 "Targets": {
@@ -70,7 +71,7 @@ with DAG(
         crawl_for_gics_schema = GlueCrawlerOperator(
             task_id="crawler_gics_industry_codes",
             config={
-                "Name": "team3-crawler",
+                "Name": "Team3-test",
                 "Role": "AWSGlueServiceRole-Team3-1",
                 "DatabaseName": "team3-db",
                 "Targets": {
