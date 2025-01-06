@@ -35,3 +35,12 @@ class AwsConfig(StrEnum):
 class ConnId(StrEnum):
     AWS = "aws_conn_id"
     BANK_OF_KOREA = "bank_of_korea_conn_id"
+
+
+class Redshift:
+    class SchemaName(StrEnum):
+        SILVER = "silver"
+
+    class TableName(StrEnum):
+        DIM_CALENDAR = "dim_calendar"
+        DIM_INDUSTRY_CODE = "dim_industry_code"

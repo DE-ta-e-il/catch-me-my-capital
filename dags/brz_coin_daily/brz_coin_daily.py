@@ -22,7 +22,7 @@ with DAG(
     start_date=datetime(2024, 12, 1),
     catchup=True,
     max_active_tasks=5,
-    tags=[Layer.BRONZE, Interval.DAILY],
+    tags=[Layer.BRONZE, Interval.DAILY.label],
 ) as dag:
     fetch_coin_data_task = PythonOperator(
         task_id="fetch_coin_data",

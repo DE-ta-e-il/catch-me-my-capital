@@ -45,4 +45,5 @@ with DAG(
     # Max active tasks needed = 3 😨 I have faith in my rig!
     krx_codes_fetcher
     gics_codes_fetcher
+
     [krx_codes_fetcher, gics_codes_fetcher] >> clearsky
