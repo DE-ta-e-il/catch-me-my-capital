@@ -1,4 +1,4 @@
-# 수집할 인덱스 심볼과 URL
+# 수집할 인덱스 심볼과 URL 코드
 SYMBOLS = {
     "FTASEANAS": "961167",  # FTSE 아세안 종합지수(FTSE ASEAN All-Share Index)
     "SSEC": "40820",  # 상해 종합 지수 (중국, Shanghai Composite Index)
