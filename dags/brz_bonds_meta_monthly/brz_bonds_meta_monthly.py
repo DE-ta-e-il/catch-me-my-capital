@@ -29,12 +29,11 @@ with DAG(
         # Put prev_task right below category loop to parallelize
         urls_dict = get_categories()
         for category in urls_dict:
-            for bond_name in urls_dict[category]:
-                crawl_for_bonds_metadata = PythonOperator(
-                    task_id=f"metadata_for_{category}_{bond_name}",
-                    python_callable=get_metadata,
-                    op_args=[category, bond_name],
-                )
-                crawl_for_bonds_metadata
+            crawl_for_bonds_metadata = PythonOperator(
+                task_id=f"metadata_for_{category}",
+                python_callable=get_metadata,
+                op_args=[category],
+            )
+            crawl_for_bonds_metadata
 
     meta_data_crawler_group

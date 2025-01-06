@@ -23,7 +23,7 @@ def get_categories():
 
 
 # Get all bonds' metadata
-def get_metadata(category, bond_name, **ctxt):
+def get_metadata(category, **ctxt):
     # Fetch the urls file
     s3 = S3Hook(aws_conn_id="aws_conn_id")
     file = s3.read_key(
@@ -32,21 +32,25 @@ def get_metadata(category, bond_name, **ctxt):
     urls_dict = json.loads(file)
 
     # Bonds meta data crawling
-    res = requests.get(urls_dict[category][bond_name]["meta"])
-    time.sleep(3)
-    soup = BeautifulSoup(res.text, "html.parser")
-    table = soup.find("table")  # there is only one table tag
+    payload = []
+    for bond_key in urls_dict[category]:
+        res = requests.get(urls_dict[category][bond_key]["meta"])
+        time.sleep(2)
+        soup = BeautifulSoup(res.text, "html.parser")
+        table = soup.find("table")  # there is only one table tag
 
-    parsed = {}
-    for row in table.find_all("tr"):
-        cols = row.find_all("td")
-        if len(cols) == 2:
-            header = cols[0].text.strip().replace(" ", "_").lower()
-            content = cols[1].text.strip()
-            if content:
-                parsed[header] = parsed.get(header, content)
-                parsed["name"] = bond_name
+        parsed = {}
+        for row in table.find_all("tr"):
+            cols = row.find_all("td")
+            if len(cols) == 2:
+                header = cols[0].text.strip().replace(" ", "_").lower()
+                content = cols[1].text.strip()
+                if content:
+                    parsed[header] = parsed.get(header, content)
+                    parsed["name"] = bond_key
+
+        payload.append(parsed)
 
     date = datetime.strptime(ctxt["ds"], "%Y-%m-%d").strftime("%Y-%m-%d")
-    key = f"bronze/{category}/ymd={date}/{category}_{bond_name}_meta_{date[:7]}.json"
-    upload_bonds_metadata_to_s3(parsed, key)
+    key = f"bronze/{category}/ymd={date}/{category}_meta_{date[:7]}.json"
+    upload_bonds_metadata_to_s3(payload, key)
