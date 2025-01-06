@@ -93,9 +93,9 @@ WriteToRedshift_node3 = glueContext.write_dynamic_frame.from_options(
         "url": "jdbc:redshift://team3-1-cluster.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com:5439/dev",
         "user": secrets[0],
         "password": secrets[1],
-        "dbtable": "dim_industry_code",
+        "dbtable": "silver.dim_industry_code",
         "redshiftTmpDir": "s3://team3-1-s3/data/redshift_temp/",
-        "preactions": "DROP TABLE IF EXISTS dim_industry_code; CREATE TABLE dim_industry_code (item_code VARCHAR, item_name VARCHAR, industry_code VARCHAR, market VARCHAR, created_at TIMESTAMP, updated_at TIMESTAMP, issue_date DATE);",
+        "preactions": "DROP TABLE IF EXISTS silver.dim_industry_code; CREATE TABLE silver.dim_industry_code (item_code VARCHAR, item_name VARCHAR, industry_code VARCHAR, market VARCHAR, created_at TIMESTAMP, updated_at TIMESTAMP, issue_date DATE);",
     },
     transformation_ctx="WriteToRedshift_node3",
 )

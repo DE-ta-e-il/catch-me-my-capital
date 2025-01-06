@@ -9,13 +9,14 @@ from slv_industry_code_daily.constants import AirflowParam, ProvidersParam
 from slv_industry_code_daily.helpers import to_crawl_or_not_to_crawl
 
 # GICS codes are not used
+# TODO: Full-refresh probably is not a good idea? (6M rows)
 # Some tasks get skipped by the branch operator. 'all-success' rule might break this DAG?
 # https://www.marclamberti.com/blog/airflow-trigger-rules-all-you-need-to-know/#Solving_the_BranchPythonOperator_pitfall
 default_args = {
     "owner": "dee",
     "start_date": AirflowParam.START_DATE.value,
-    "retries": 0,
-    # "retry_delay":
+    "retries": 1,
+    "retry_delay": 60,
 }
 
 with DAG(
