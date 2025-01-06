@@ -1,3 +1,4 @@
-yfinance
+yfinance==0.2.51
 requests
 bs4
+apache-airflow-providers-amazon
