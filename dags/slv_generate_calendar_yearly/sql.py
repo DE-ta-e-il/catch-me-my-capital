@@ -33,7 +33,7 @@ DECLARE
     calendar_count INTEGER;
 begin
     -- full refresh를 위한 데이터 삭제
-	SELECT count(1) INTO calendar_count FROM {SCHEMA}.{CALENDAR_TABLE_NAME} where year=input_year;
+	DELETE FROM {SCHEMA}.{CALENDAR_TABLE_NAME} WHERE year=input_year;
 
 	current_date := start_date;
     WHILE current_date <= end_date LOOP
