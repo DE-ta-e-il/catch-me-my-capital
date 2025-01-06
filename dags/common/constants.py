@@ -39,7 +39,7 @@ class ConnId(StrEnum):
 
 class Redshift:
     class SchemaName(StrEnum):
-        SILVER = "test"
+        SILVER = "silver"
 
     class TableName(StrEnum):
         DIM_CALENDAR = "dim_calendar"
