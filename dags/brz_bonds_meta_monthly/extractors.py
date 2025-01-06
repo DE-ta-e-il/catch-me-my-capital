@@ -53,4 +53,4 @@ def get_metadata(category, **ctxt):
 
     date = datetime.strptime(ctxt["ds"], "%Y-%m-%d").strftime("%Y-%m-%d")
     key = f"bronze/{category}/ymd={date}/{category}_meta_{date[:7]}.json"
-    upload_bonds_metadata_to_s3(payload, key)
+    upload_bonds_metadata_to_s3(json.dumps(payload, indent=4), key)
