@@ -64,7 +64,12 @@ def get_bond_data(bond_category, **ctxt):
             if isinstance(rec, dict):
                 date = rec["Date"]
                 # Add necessary info
-                rec.update({"bond_key": bond_kind})
+                rec.update(
+                    {
+                        "bond_key": bond_kind,
+                        "matures_in": int(bond_kind[-4:]) - int(bond_kind[-9:-5]),
+                    }
+                )
                 gbd[date[:10]].append(rec)
 
     if len(gbd) == 0:
