@@ -21,17 +21,13 @@ def generate_urls(**ctxt):
     urls_dict = json.loads(file)
 
     # Date range for the url query strings
-    ds = ctxt["ds"]
+    dt = datetime.strptime(ctxt["ds"], "%Y-%m-%d")
     d_range = (
         (datetime(2015, 1, 1), AirflowParam.START_DATE.value)
         if AirflowParam.FIRST_RUN.value
         else (
-            (datetime.strptime(ds, "%Y-%m-%d") - timedelta(days=1)).replace(
-                hour=0, minute=0, second=0, microsecond=0
-            ),
-            datetime.strptime(ds, "%Y-%m-%d").replace(
-                hour=0, minute=0, second=0, microsecond=0
-            ),
+            (dt - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0),
+            dt.replace(hour=0, minute=0, second=0, microsecond=0),
         )
     )
     # NOTE: Maximum Moody's rating for KR corp bonds are Aa2. Data points : once a day.
@@ -48,8 +44,7 @@ def generate_urls(**ctxt):
 
 # A dynamic task template for fetching bond data from Business insider API
 def get_bond_data(bond_category, **ctxt):
-    ds = ctxt["ds"]
-    date = datetime.strptime(ds, "%Y-%m-%d").strftime("%Y-%m-%d")
+    date = datetime.strptime(ctxt["ds"], "%Y-%m-%d").strftime("%Y-%m-%d")
 
     # Fetch urls
     s3 = S3Hook(aws_conn_id="aws_conn_id")

@@ -1,7 +1,6 @@
 import json
 import time
-from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import requests
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook

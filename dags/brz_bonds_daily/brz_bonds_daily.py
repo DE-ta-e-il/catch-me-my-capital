@@ -1,5 +1,6 @@
 # TODO: Check the silver layer notion page https://www.notion.so/Silver-Layer-DB-84d715eb2a02479b8c60ba68bce09856
 from airflow import DAG
+from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
@@ -37,4 +38,8 @@ with DAG(
             )
             get_corresponding_bond_data
 
-    url_generator >> api_caller_group
+    completion_marker = EmptyOperator(
+        task_id="bonds_all_success_check",
+    )
+
+    url_generator >> api_caller_group >> completion_marker
