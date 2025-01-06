@@ -25,7 +25,7 @@ with DAG(
     catchup=True,
     tags=["silver", "bonds", "daily"],
     max_active_tasks=2,
-    # max_active_runs=1,
+    max_active_runs=1,
 ) as dag:
     starter = EmptyOperator(task_id="start_of_slv_bonds_daily")
 
