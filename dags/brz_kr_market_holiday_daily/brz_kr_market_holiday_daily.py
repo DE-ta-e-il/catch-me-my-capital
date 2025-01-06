@@ -21,7 +21,7 @@ with DAG(
     start_date=datetime(2025, 1, 1),
     default_args=default_args,
     tags=[Layer.BRONZE, "market holiday", Interval.DAILY.label],
-    catchup=True,
+    catchup=False,
     max_active_runs=3,
 ) as dag:
     fetch_krx_market_holiday_to_s3 = PythonOperator(
