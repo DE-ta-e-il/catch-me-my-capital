@@ -16,6 +16,6 @@ resource "aws_iam_policy" "mwaa_secrets_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "mwaa_policy_attachment" {
-  role       = module.mwaa.mwaa_role_arn.name
+  role       = module.mwaa.mwaa_role_arn
   policy_arn = aws_iam_policy.mwaa_secrets_policy.arn
 }
