@@ -1,3 +1,4 @@
+import json
 import time
 from datetime import datetime
 
@@ -13,7 +14,8 @@ def fetch_industry_codes(market, referer, mktId, **ctxt):
     For KRX KOSPI and KOSDAQ industry codes but it can be expanded(NOT compatible with GICS crawling).
     """
     # date validation
-    date = datetime.strptime(ctxt["ds"], "%Y-%m-%d").strftime("%Y-%m-%d")
+    date = ctxt["ds"]
+    date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
 
     url = "http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd"
     try:
@@ -35,7 +37,7 @@ def fetch_industry_codes(market, referer, mktId, **ctxt):
     except Exception as e:
         raise Exception(e)
 
-    time.sleep(3)
+    time.sleep(10)
 
     content = res.json()
     items = []
@@ -57,8 +59,9 @@ def fetch_industry_codes(market, referer, mktId, **ctxt):
     if len(new_items) == 0:
         raise Exception("NOPE NOT GETTING ANY")
 
-    key = f"bronze/industry_code/ymd={date}/krx_codes_{date}.json"
-    upload_codes_to_s3(new_items, key)
+    key = f"bronze/industry_code/krx_codes/ymd={date}/krx_codes_{date}.json"
+    stringified = json.dumps(new_items, indent=4, ensure_ascii=False)
+    upload_codes_to_s3(stringified, key)
 
 
 # For crawling GICS
@@ -69,7 +72,7 @@ def crawl_industry_codes(**ctxt):
     """
     url = "https://en.wikipedia.org/wiki/Global_Industry_Classification_Standard#Classification"
     res = requests.get(url)
-    time.sleep(2)
+    time.sleep(3)
     soup = BeautifulSoup(res.text, "html.parser")
     time.sleep(2)
 
@@ -77,6 +80,8 @@ def crawl_industry_codes(**ctxt):
 
     # Industry codes lengths are 2, 4, 6, 8, and
     # each category code acts as the prefix(reference key) of the prior(higher) category
+    # so it would be safe to devide each category into tables
+    # hence the logic.
     # https://en.wikipedia.org/wiki/Global_Industry_Classification_Standard#Classification
     sectors, industry_group, industry, sub_industry = [], [], [], []
     for i, r in enumerate(rows):
@@ -92,7 +97,8 @@ def crawl_industry_codes(**ctxt):
             else:
                 sub_industry.append({"code": target, "name": name})
 
-    date = datetime.strptime(ctxt["ds"], "%Y-%m-%d").strftime("%Y-%m-%d")
+    date = ctxt["ds"]
+    date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
 
     for category, payload in {
         "sector": sectors,
@@ -100,5 +106,6 @@ def crawl_industry_codes(**ctxt):
         "industry": industry,
         "sub_industry": sub_industry,
     }.items():
-        key = f"bronze/industry_code/ymd={date}/gics_{category}_codes_{date}.json"
-        upload_codes_to_s3(payload, key)
+        key = f"bronze/industry_code/gics_codes/ymd={date}/gics_{category}_codes_{date}.json"
+        stringified = json.dumps(payload, indent=4)
+        upload_codes_to_s3(stringified, key)
