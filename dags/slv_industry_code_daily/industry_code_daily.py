@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import BranchPythonOperator
@@ -5,6 +7,7 @@ from airflow.providers.amazon.aws.operators.glue import GlueJobOperator
 from airflow.providers.amazon.aws.operators.glue_crawler import GlueCrawlerOperator
 from airflow.sensors.s3_key_sensor import S3KeySensor
 from airflow.utils.task_group import TaskGroup
+from common.constants import Owner
 from slv_industry_code_daily.constants import AirflowParam, ProvidersParam
 from slv_industry_code_daily.helpers import to_crawl_or_not_to_crawl
 
@@ -13,10 +16,10 @@ from slv_industry_code_daily.helpers import to_crawl_or_not_to_crawl
 # Some tasks get skipped by the branch operator. 'all-success' rule might break this DAG?
 # https://www.marclamberti.com/blog/airflow-trigger-rules-all-you-need-to-know/#Solving_the_BranchPythonOperator_pitfall
 default_args = {
-    "owner": "dee",
+    "owner": Owner.DONGWON,
     "start_date": AirflowParam.START_DATE.value,
     "retries": 1,
-    "retry_delay": 60,
+    "retry_delay": timedelta(minutes=1),
 }
 
 with DAG(
@@ -24,7 +27,7 @@ with DAG(
     default_args=default_args,
     schedule_interval="0 0 * * 1-5",
     catchup=True,
-    tags=["bronze"],
+    tags=["bronze", "industry_code", "daily"],
     max_active_tasks=2,
     # This ensures running the crawler the first time around!
     max_active_runs=1,

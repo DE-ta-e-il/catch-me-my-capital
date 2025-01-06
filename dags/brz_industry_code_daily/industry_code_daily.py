@@ -2,11 +2,12 @@
 # This DAG does full refresh every month.
 # TODO: Use airflow.models.connection to manage connections once AWS secrets manager is utilized.
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.python import PythonOperator
+from common.constants import Owner
 
 from brz_industry_code_daily.extractors import (
     crawl_industry_codes,
@@ -18,9 +19,13 @@ with DAG(
     start_date=datetime(2015, 1, 1),
     schedule_interval="0 0 * * 1-5",
     catchup=True,
-    tags=["bronze"],
+    tags=["bronze", "industry_code", "daily"],
     description="A DAG that fetches industry(sector) codes for stocks.",
-    default_args={"retries": 0, "trigger_rule": "all_success", "owner": "dee"},
+    default_args={
+        "retries": 1,
+        "retry_delay": timedelta(minutes=1),
+        "owner": Owner.DONGWON,
+    },
     max_active_tasks=3,
 ) as dag:
     krx_codes_fetcher = PythonOperator(
