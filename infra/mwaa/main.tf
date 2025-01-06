@@ -80,7 +80,7 @@ module "mwaa" {
   private_subnet_ids = slice("${module.vpc.private_subnets}", 0, 2)
 
   min_workers           = 1
-  max_workers           = 2
+  max_workers           = 5
   webserver_access_mode = "PUBLIC_ONLY"
 
   logging_configuration = {
