@@ -1,7 +1,7 @@
 import json
 
 import requests
-from common import upload_file_to_s3
+from common.s3_utils import upload_file_to_s3
 
 
 def fetch_news_data(temp_file_path, api_key, news_data_s3_key, **kwargs):

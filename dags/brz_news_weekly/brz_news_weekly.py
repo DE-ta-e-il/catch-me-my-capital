@@ -2,14 +2,10 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from common import Interval, Layer, Owner
+from common.constants import Interval, Layer, Owner
 
-from brz_news_weekly import (
-    NEWS_DATA_S3_KEY,
-    NEWS_TMP_PATH,
-    NYT_API_KEY,
-    fetch_news_data,
-)
+from brz_news_weekly.constants import NEWS_DATA_S3_KEY, NEWS_TMP_PATH, NYT_API_KEY
+from brz_news_weekly.extractors import fetch_news_data
 
 default_args = {
     "owner": Owner.MINHYEOK,
