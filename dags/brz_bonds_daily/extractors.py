@@ -59,21 +59,23 @@ def get_bond_data(bond_category, **ctxt):
     full_urls = json.loads(file)
 
     # Fetching the ranged data
+    # gbd: Short for grouped-by-day
+    gbd = defaultdict(list)
     for bond_kind in full_urls[bond_category]:
         response = requests.get(full_urls[bond_category][bond_kind])
         time.sleep(3)
 
-        # gbd: Short for grouped-by-day
-        gbd = defaultdict(list)
         for rec in response.json():
-            date = rec["Date"]
-            # Add necessary info
-            gbd[date[:10]].append(rec)
+            if isinstance(rec, dict):
+                date = rec["Date"]
+                # Add necessary info
+                rec.update({"bond_key": bond_kind})
+                gbd[date[:10]].append(rec)
 
-        if len(gbd) == 0:
-            raise Exception("Nothing was fetched")
+    if len(gbd) == 0:
+        raise Exception("Nothing was fetched")
 
-        for dt, daily_list in gbd.items():
-            key = f"bronze/{bond_category}/ymd={dt}/{bond_kind}_{dt}.json"
-            payload = json.dumps(daily_list, indent=4)
-            upload_to_s3(payload, key)
+    for dt, daily_list in gbd.items():
+        key = f"bronze/{bond_category}/ymd={dt}/{bond_category}_{dt}.json"
+        payload = json.dumps(daily_list, indent=4)
+        upload_to_s3(payload, key)
