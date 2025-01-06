@@ -17,7 +17,6 @@ default_args = {
     "retries": 0,
     # "retry_delay":
 }
-must_crawl = AirflowParam.TO_CRAWL.value
 
 with DAG(
     dag_id="slv_industry_code_daily",
@@ -26,6 +25,8 @@ with DAG(
     catchup=True,
     tags=["bronze"],
     max_active_tasks=2,
+    # This ensures running the crawler the first time around!
+    max_active_runs=1,
 ) as dag:
     # TODO: Is it better to utilize a sub-DAG?
     wait = S3KeySensor(
@@ -33,6 +34,7 @@ with DAG(
         bucket_key="bronze/industry_code/krx_codes/ymd={{ ds }}/krx_codes_{{ ds }}.json",
         poke_interval=60,
         timeout=600,
+        aws_conn_id="aws_conn_id",
         task_id="wait_brz_industry_code_daily",
         mode="reschedule",  # poke mode takes up a worker slot while waiting.
     )
@@ -50,15 +52,16 @@ with DAG(
     )
 
     with TaskGroup("crawler_group") as crawler_group:
-        crawl_for_krx_schema = GlueCrawlerOperator(
-            task_id="crawler_krx_industry_codes",
+        crawl_for_codes_schema = GlueCrawlerOperator(
+            task_id="crawler_industry_codes",
             config={
                 "Name": "Team3-test",
                 "Role": "AWSGlueServiceRole-Team3-1",
                 "DatabaseName": "team3-db",
                 "Targets": {
                     "S3Targets": [
-                        {"Path": "s3://team3-1-s3/bronze/industry_code/krx_codes/"}
+                        {"Path": "s3://team3-1-s3/bronze/industry_code/krx_codes/"},
+                        {"Path": "s3://team3-1-s3/bronze/industry_code/gics_codes/"},
                     ]
                 },
             },
@@ -66,25 +69,7 @@ with DAG(
             wait_for_completion=True,
             region_name="ap-northeast-2",
         )
-
-        # Can't I just put all the target paths in the S3Targets?
-        crawl_for_gics_schema = GlueCrawlerOperator(
-            task_id="crawler_gics_industry_codes",
-            config={
-                "Name": "Team3-test",
-                "Role": "AWSGlueServiceRole-Team3-1",
-                "DatabaseName": "team3-db",
-                "Targets": {
-                    "S3Targets": [
-                        {"Path": "s3://team3-1-s3/bronze/industry_code/gics_codes/"}
-                    ]
-                },
-            },
-            aws_conn_id="aws_conn_id",
-            wait_for_completion=True,
-            region_name="ap-northeast-2",
-        )
-        crawl_for_krx_schema >> crawl_for_gics_schema
+        crawl_for_codes_schema
 
     # For when it is not the time to crawl
     dont_run_crawl = DummyOperator(task_id="dummy_lives_matter")
