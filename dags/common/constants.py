@@ -43,3 +43,4 @@ class Redshift:
 
     class TableName(StrEnum):
         DIM_CALENDAR = "dim_calendar"
+        DIM_INDUSTRY_CODE = "dim_industry_code"
