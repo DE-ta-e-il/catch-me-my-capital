@@ -5,9 +5,9 @@ from datetime import datetime
 import requests
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from bs4 import BeautifulSoup
+from common.s3_utils import upload_string_to_s3
 
 from brz_bonds_meta_monthly.constants import ProvidersParam
-from brz_bonds_meta_monthly.uploaders import upload_bonds_metadata_to_s3
 
 
 # Fetches urls data and returns category name and bond name
@@ -52,4 +52,4 @@ def get_metadata(category, **ctxt):
 
     date = datetime.strptime(ctxt["ds"], "%Y-%m-%d").strftime("%Y-%m-%d")
     key = f"bronze/{category}_meta/ymd={date}/{category}_meta_{date[:7]}.json"
-    upload_bonds_metadata_to_s3(json.dumps(payload, indent=4), key)
+    upload_string_to_s3(json.dumps(payload, indent=4), key)

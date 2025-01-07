@@ -23,19 +23,13 @@ def generate_urls(**ctxt):
 
     # Date range for the url query strings
     dt = datetime.strptime(ctxt["ds"], "%Y-%m-%d")
-    d_range = (
-        (datetime(2015, 1, 1), AirflowParam.START_DATE.value)
-        if AirflowParam.FIRST_RUN.value
-        else (
-            (dt - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0),
-            dt.replace(hour=0, minute=0, second=0, microsecond=0),
-        )
-    )
+
     # NOTE: Maximum Moody's rating for KR corp bonds are Aa2. Data points : once a day.
+    # NOTE: Now fetches all the data from start date to execution date
     # no xcom no ☠
     full_urls = {
         bond_kind: {
-            bond: f"https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData={urls_dict[bond_kind][bond]['chart']}&from={d_range[0].strftime('%Y%m%d')}&to={d_range[1].strftime('%Y%m%d')}"
+            bond: f"https://markets.businessinsider.com/Ajax/Chart_GetChartData?instrumentType=Bond&tkData={urls_dict[bond_kind][bond]['chart']}&from={AirflowParam.START_DATE.value.strftime('%Y%m%d')}&to={dt.strftime('%Y%m%d')}"
             for bond in urls_dict[bond_kind]
         }
         for bond_kind in urls_dict
@@ -58,9 +52,9 @@ def get_bond_data(bond_category, **ctxt):
     # gbd: Short for grouped-by-day
     gbd = defaultdict(list)
     for bond_kind in full_urls[bond_category]:
-        time.sleep(1)
+        time.sleep(2)
         response = requests.get(full_urls[bond_category][bond_kind])
-        time.sleep(1.5)
+        time.sleep(5)
 
         result = response.json()
         # API soft-fails to []
@@ -89,7 +83,8 @@ def get_bond_data(bond_category, **ctxt):
                             "matures_in": int(bond_kind[-4:]) - int(bond_kind[-9:-5]),
                         }
                     )
-                    gbd[date].append(rec)
+
+                    gbd[rec["Date"][:10]].append(rec)
 
     if len(gbd) == 0:
         raise Exception(f"{bond_category} for {date} is empty.")

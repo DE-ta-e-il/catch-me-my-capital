@@ -14,7 +14,7 @@ with DAG(
     dag_id="brz_bonds_daily",
     start_date=AirflowParam.START_DATE.value,
     schedule_interval="0 0 * * 1-5",
-    catchup=not AirflowParam.FIRST_RUN.value,
+    catchup=False,
     default_args={
         "retries": 1,
         "owner": Owner.DONGWON,
