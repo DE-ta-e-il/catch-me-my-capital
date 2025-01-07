@@ -1,14 +1,9 @@
 from datetime import datetime
 
 
-def to_crawl_or_not_to_crawl(
-    ex_date: str, start_date, crawl_task: str, placeholder_task: str
-):
+def to_crawl_or_not_to_crawl(must_crawl: bool, crawl_task: str, placeholder_task: str):
     """
     Crawls if start date == execution date
     Pass task ids as arguments!
     """
-    must_crawl = False
-    if datetime.strptime(ex_date, "%Y-%m-%d") == start_date:
-        must_crawl = True
     return crawl_task if must_crawl else placeholder_task

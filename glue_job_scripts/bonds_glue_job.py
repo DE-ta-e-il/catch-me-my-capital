@@ -19,41 +19,24 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 
-LoadFromGlueDB_govt_bonds_kr = glueContext.create_dynamic_frame.from_catalog(
-    database="team3-db",
-    table_name="govt_bonds_kr",
-    transformation_ctx="LoadFromGlueDB_govt_bonds_kr",
-)
-LoadFromGlueDB_govt_bonds_us = glueContext.create_dynamic_frame.from_catalog(
-    database="team3-db",
-    table_name="govt_bonds_us",
-    transformation_ctx="LoadFromGlueDB_govt_bonds_us",
-)
-LoadFromGlueDB_corp_bonds_kr = glueContext.create_dynamic_frame.from_catalog(
-    database="team3-db",
-    table_name="corp_bonds_kr",
-    transformation_ctx="LoadFromGlueDB_corp_bonds_kr",
-)
-LoadFromGlueDB_corp_bonds_us = glueContext.create_dynamic_frame.from_catalog(
-    database="team3-db",
-    table_name="corp_bonds_us",
-    transformation_ctx="LoadFromGlueDB_corp_bonds_us",
-)
+df = glueContext.create_dynamic_frame.from_options(
+    connection_type="s3",
+    connection_options={
+        "paths": ["s3://team3-1-s3/bronze/bonds/"],
+        "recurse": True,
+        "groupFiles": "inPartition",
+    },
+    format="json",
+).toDF()
 
-brz_gk_df = LoadFromGlueDB_govt_bonds_kr.toDF().withColumn("bond_type", "govt")
-brz_gu_df = LoadFromGlueDB_govt_bonds_us.toDF().withColumn("bond_type", "corp")
-brz_ck_df = LoadFromGlueDB_corp_bonds_kr.toDF().withColumn("bond_type", "govt")
-brz_cu_df = LoadFromGlueDB_corp_bonds_us.toDF().withColumn("bond_type", "corp")
-
-concat_df = brz_gk_df.union(brz_gu_df).union(brz_ck_df).union(brz_cu_df)
-
-stamped = (
-    concat_df.withColumn("created_at", current_timestamp())
+final_df = (
+    df.withColumn("created_at", current_timestamp())
     .withColumn("updated_at", current_timestamp())
-    .withColumnRenamed("close", "yield")
+    .withColumnRenamed("Close", "yield")
+    .withColumnRenamed("Volume", "volume")
+    .withColumnRenamed("Date", "date")
+    .drop("Open", "High", "Low", "Estimate")
 )
-
-stamped.drop("open", "high", "low", "estimate")
 
 
 def table_exists():
@@ -67,14 +50,16 @@ def table_exists():
 
 
 if table_exists():
-    existing_df = spark.read.parquet("s3://team3-1-s3/silver/bonds/fact_bonds")
+    existing_df = spark.read.parquet(
+        "s3://team3-1-s3/silver/bonds/fact_bonds", {"mergeSchema": True}
+    )
 
     # Upsert
-    stamped = (
+    final_df = (
         existing_df.alias("existing")
-        .join(stamped.alias("new"), ["date", "bond_key"], "outer")
+        .join(final_df.alias("new"), ["date", "bond_key"], "outer")
         .select(
-            F.coalesce(F.col("new.price"), F.col("existing.price")).alias("price"),
+            F.coalesce(F.col("new.yield"), F.col("existing.yield")).alias("yield"),
             F.coalesce(F.col("new.volume"), F.col("existing.volume")).alias("volume"),
             F.col("new.date").alias("date"),
             F.col("new.bond_key").alias("bond_key"),
@@ -86,10 +71,10 @@ if table_exists():
     )
 
 # Write back to s3
-stamped.write.mode("overwrite").parquet("s3://team3-1-s3/silver/bonds/fact_bonds")
+final_df.write.mode("overwrite").parquet("s3://team3-1-s3/silver/bonds/")
 
 # Revert back to DynamicFrame
-dynamic_frame = DynamicFrame.fromDF(stamped, glueContext, "dynamic_frame")
+dynamic_frame = DynamicFrame.fromDF(final_df, glueContext, "dynamic_frame")
 
 
 def get_secret():
@@ -119,8 +104,8 @@ WriteToRedshift_bonds = glueContext.write_dynamic_frame.from_options(
         "user": secrets[0],
         "password": secrets[1],
         "dbtable": "silver.fact_bonds",
-        "redshiftTmpDir": "s3://team3-1-s3/data/redshift_temp/",
-        "preactions": "DROP TABLE IF EXISTS silver.fact_bonds; CREATE TABLE silver.fact_bonds (price DECIMAL(6, 3), volume BIGINT, date TIMESTAMP, matures_in BIGINT, created_at TIMESTAMP, updated_at TIMESTAMP, bond_key VARCHAR, bond_type VARCHAR);",
+        # "redshiftTmpDir": "s3://team3-1-s3/data/redshift_temp/bonds/",
+        "preactions": "DROP TABLE IF EXISTS silver.fact_bonds; CREATE TABLE silver.fact_bonds (yield DECIMAL(6, 3), volume BIGINT, date TIMESTAMP, matures_in BIGINT, created_at TIMESTAMP, updated_at TIMESTAMP, bond_key VARCHAR, bond_type VARCHAR);",
     },
     transformation_ctx="WriteToRedshift_bonds",
 )
