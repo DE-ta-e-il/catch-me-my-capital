@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -57,23 +58,41 @@ def get_bond_data(bond_category, **ctxt):
     # gbd: Short for grouped-by-day
     gbd = defaultdict(list)
     for bond_kind in full_urls[bond_category]:
+        time.sleep(1)
         response = requests.get(full_urls[bond_category][bond_kind])
-        time.sleep(3)
+        time.sleep(1.5)
 
-        for rec in response.json():
-            if isinstance(rec, dict):
-                date = rec["Date"]
-                # Add necessary info
-                rec.update(
-                    {
-                        "bond_key": bond_kind,
-                        "matures_in": int(bond_kind[-4:]) - int(bond_kind[-9:-5]),
-                    }
-                )
-                gbd[date[:10]].append(rec)
+        result = response.json()
+        # API soft-fails to []
+        # add empty records for those that are outside issuance-maturity range
+        if not result:
+            gbd[date].append(
+                {
+                    "bond_key": bond_kind,
+                    "matures_in": 0,
+                    "Close": 0,
+                    "Open": 0,
+                    "High": 0,
+                    "Low": 0,
+                    "Volume": 0,
+                    "Estimate": 0,
+                    "Date": date,
+                }
+            )
+        else:
+            for rec in result:
+                if isinstance(rec, dict):
+                    # Add necessary info
+                    rec.update(
+                        {
+                            "bond_key": bond_kind,
+                            "matures_in": int(bond_kind[-4:]) - int(bond_kind[-9:-5]),
+                        }
+                    )
+                    gbd[date].append(rec)
 
     if len(gbd) == 0:
-        raise Exception("Nothing was fetched")
+        raise Exception(f"{bond_category} for {date} is empty.")
 
     for dt, daily_list in gbd.items():
         key = f"bronze/{bond_category}/ymd={dt}/{bond_category}_{dt}.json"

@@ -15,7 +15,7 @@ from brz_bonds_meta_monthly.extractors import (
 )
 
 with DAG(
-    dag_id="brz_govt_bonds_meta_monthly",
+    dag_id="brz_bonds_meta_monthly",
     start_date=AirflowParam.START_DATE.value,
     schedule_interval="0 0 1 * 1-5",
     catchup=False,

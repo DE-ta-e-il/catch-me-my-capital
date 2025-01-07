@@ -1,13 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 
 from airflow.models import Variable
 
 
 class AirflowParam(Enum):
-    START_DATE = (datetime.now() - timedelta(days=1)).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
+    START_DATE = datetime(2025, 1, 1)
 
 
 class ProvidersParam(Enum):
