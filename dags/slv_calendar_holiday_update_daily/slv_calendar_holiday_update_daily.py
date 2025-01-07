@@ -11,8 +11,8 @@ from common.constants import Interval, Layer, Owner
 
 default_args = {
     "owner": Owner.JUNGMIN,
-    "retries": 3,
-    "retry_delay": timedelta(minutes=5),
+    # "retries": 3,
+    # "retry_delay": timedelta(minutes=5),
 }
 
 with DAG(
@@ -60,11 +60,12 @@ with DAG(
         script_args={"--current_year": "{{ logical_date.year }}"},
         region_name="ap-northeast-2",
         iam_role_name="AWSGlueServiceRole-Team3-1",
-        num_of_dpus=2,
         create_job_kwargs={
-            "GlueVersion": "3.0",
-            "MaxCapacity": 10,
+            "GlueVersion": "5.0",
+            "WorkerType": "G.2X",
+            "NumberOfWorkers": 10,
         },
+        update_config=True,
         aws_conn_id="aws_conn_id",
     )
 
