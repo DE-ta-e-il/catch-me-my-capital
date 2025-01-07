@@ -28,14 +28,14 @@ with DAG(
     default_args=default_args,
     tags=[Layer.SILVER, Interval.DAILY.label, FEATURE],
 ) as dag:
-    # wait_for_fetch_commodities_data = ExternalTaskSensor(
-    #     task_id="wait_for_fetch_commodities_data",
-    #     external_dag_id="brz_commodities_daily",
-    #     external_task_id="fetch_commodities_data",
-    #     timeout=600,
-    #     allowed_states=["success", "skipped"],
-    #     mode="reschedule",
-    # )
+    wait_for_fetch_commodities_data = ExternalTaskSensor(
+        task_id="wait_for_fetch_commodities_data",
+        external_dag_id="brz_commodities_daily",
+        external_task_id="fetch_commodities_data",
+        timeout=600,
+        allowed_states=["success", "skipped"],
+        mode="reschedule",
+    )
 
     initialize_tables = RedshiftDataOperator(
         task_id="initialize_tables",
@@ -62,8 +62,8 @@ with DAG(
         },
     )
 
-    swap_table_in_redshift = RedshiftDataOperator(
-        task_id="swap_table_in_redshift",
+    swap_tables = RedshiftDataOperator(
+        task_id="swap_tables",
         aws_conn_id=ConnId.AWS,
         cluster_identifier=AwsConfig.REDSHIFT_CLUSTER_ID,
         database=AwsConfig.REDSHIFT_DB_NAME,
@@ -71,4 +71,9 @@ with DAG(
         sql=SWAP_TABLE_QUERY.format(target_table=TARGET_TABLE),
     )
 
-    initialize_tables >> transform_commodities_data >> swap_table_in_redshift
+    (
+        wait_for_fetch_commodities_data
+        >> initialize_tables
+        >> transform_commodities_data
+        >> swap_tables
+    )
