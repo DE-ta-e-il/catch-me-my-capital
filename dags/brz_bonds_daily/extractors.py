@@ -6,9 +6,9 @@ from datetime import datetime, timedelta
 
 import requests
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from common.s3_utils import upload_string_to_s3
 
 from brz_bonds_daily.constants import AirflowParam, ProvidersParam
-from brz_bonds_daily.uploaders import upload_to_s3
 
 
 # Business Insider API endpoint url generator
@@ -40,7 +40,7 @@ def generate_urls(**ctxt):
         }
         for bond_kind in urls_dict
     }
-    upload_to_s3(json.dumps(full_urls, indent=4), "data/full_urls_bonds.json")
+    upload_string_to_s3(json.dumps(full_urls, indent=4), "data/full_urls_bonds.json")
 
 
 # A dynamic task template for fetching bond data from Business insider API
@@ -97,4 +97,4 @@ def get_bond_data(bond_category, **ctxt):
     for dt, daily_list in gbd.items():
         key = f"bronze/{bond_category}/ymd={dt}/{bond_category}_{dt}.json"
         payload = json.dumps(daily_list, indent=4)
-        upload_to_s3(payload, key)
+        upload_string_to_s3(payload, key)
