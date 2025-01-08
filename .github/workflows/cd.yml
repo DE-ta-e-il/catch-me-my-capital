@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - test
+      - feature/TDET-81-silver-dag-test
 env:
   AWS_REGION_NAME: ${{ vars.AWS_REGION_NAME }}
   AWS_BUCKET_NAME: ${{ vars.AWS_BUCKET_NAME }}
