@@ -5,11 +5,12 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 
+from brz_industry_code_daily.constants import URLParam
 from brz_industry_code_daily.uploaders import upload_codes_to_s3
 
 
 # For KRX APIs' industry codes
-def fetch_industry_codes(market, referer, mktId, **ctxt):
+def fetch_industry_codes(**ctxt):
     """
     For KRX KOSPI and KOSDAQ industry codes but it can be expanded(NOT compatible with GICS crawling).
     """
@@ -18,43 +19,48 @@ def fetch_industry_codes(market, referer, mktId, **ctxt):
     date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y-%m-%d")
 
     url = "http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd"
-    try:
-        res = requests.post(
-            url=url,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
-                "Referer": f"http://data.krx.co.kr/contents/MDC/MDI/mdiLoader/index.cmd?menuId={referer}",
-            },
-            data={
-                "bld": "dbms/MDC/STAT/standard/MDCSTAT03901",
-                "locale": "ko_KR",
-                "mktId": mktId,
-                "trdDd": date,
-                "money": 1,
-                "csvxls_isNo": "false",
-            },
-        )
-    except Exception as e:
-        raise Exception(e)
+    markets = {}
+    for market, params in URLParam.MARKETS.value.items():
+        try:
+            res = requests.post(
+                url=url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
+                    "Referer": f"http://data.krx.co.kr/contents/MDC/MDI/mdiLoader/index.cmd?menuId={params[0]}",
+                },
+                data={
+                    "bld": "dbms/MDC/STAT/standard/MDCSTAT03901",
+                    "locale": "ko_KR",
+                    "mktId": params[1],
+                    "trdDd": date,
+                    "money": 1,
+                    "csvxls_isNo": "false",
+                },
+            )
+        except Exception as e:
+            raise Exception(e)
 
-    time.sleep(10)
+        time.sleep(3)
 
-    content = res.json()
-    items = []
-    for block in content:
-        items.extend(content[block])
+        markets.update({market: res.json()})
+
+    if not markets:
+        raise Exception(f"Erorr: Empty responses.")
 
     new_items = []
-    for item in items:
-        if isinstance(item, dict):
-            new_items.append(
-                {
-                    "item_code": item["ISU_SRT_CD"],
-                    "item_name": item["ISU_ABBRV"],
-                    "industry_code": item["IDX_IND_NM"],
-                    "market": market,
-                }
-            )
+    for market_name, blocks in markets.items():
+        for _, items in blocks.items():
+            for item in items:
+                if isinstance(item, dict):
+                    new_items.append(
+                        {
+                            "item_code": item["ISU_SRT_CD"],
+                            "item_name": item["ISU_ABBRV"],
+                            "industry_code": item["IDX_IND_NM"],
+                            "market": market_name,
+                            "issue_date": date,
+                        }
+                    )
 
     if len(new_items) == 0:
         raise Exception("NOPE NOT GETTING ANY")
