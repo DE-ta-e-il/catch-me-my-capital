@@ -30,6 +30,8 @@ class Layer(StrEnum):
 class AwsConfig(StrEnum):
     S3_BUCKET_KEY = "s3_bucket"
     S3_PARTITION_KEY = "ymd"
+    REGION_NAME = "ap-northeast-2"
+    GLUE_ROLE_NAME = "AWSGlueServiceRole-Team3-1"
 
 
 class ConnId(StrEnum):
