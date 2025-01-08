@@ -5,10 +5,7 @@ from airflow.models import Variable
 
 
 class AirflowParam(Enum):
-    START_DATE = (datetime.now() - timedelta(days=1)).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-    FIRST_RUN = True
+    START_DATE = datetime(2025, 1, 6)
 
 
 class ProvidersParam(Enum):
