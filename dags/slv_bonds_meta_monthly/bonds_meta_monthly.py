@@ -8,6 +8,7 @@ from airflow.providers.amazon.aws.operators.glue_crawler import GlueCrawlerOpera
 from airflow.sensors.s3_key_sensor import S3KeySensor
 from airflow.utils.task_group import TaskGroup
 from common.constants import Owner
+
 from slv_bonds_meta_monthly.constants import AirflowParam, ProvidersParam, URLParam
 from slv_bonds_meta_monthly.helpers import to_crawl_or_not_to_crawl
 
@@ -19,10 +20,10 @@ default_args = {
 }
 
 with DAG(
-    dag_id="slv_bonds_meta_daily",
+    dag_id="slv_bonds_meta_monthly",
     default_args=default_args,
     schedule_interval="0 0 1 * 1-5",
-    catchup=True,
+    catchup=False,
     tags=["silver", "bonds", "monthly", "meta"],
     max_active_tasks=2,
     max_active_runs=1,
@@ -30,24 +31,16 @@ with DAG(
     starter = EmptyOperator(task_id="start_of_slv_bonds_meta_daily")
 
     with TaskGroup("slv_bonds_meta_sensor_group") as sensor_group:
-        loop_bridge = EmptyOperator(task_id="slv_bonds_meta_loop_bridge")
-
-        for bond_category in URLParam.URLS_DICT.value:
-            wait = S3KeySensor(
-                bucket_name=ProvidersParam.S3_BUCKET.value,
-                bucket_key="bronze/"
-                + bond_category
-                + "_meta/ymd={{ ds }}/"
-                + bond_category
-                + "_meta_{{ ds }}.json",
-                poke_interval=60,
-                timeout=600,
-                aws_conn_id="aws_conn_id",
-                task_id=f"wait_for_brz_{bond_category}_meta",
-                mode="reschedule",
-            )
-            loop_bridge >> wait
-            wait >> loop_bridge
+        wait = S3KeySensor(
+            bucket_name=ProvidersParam.S3_BUCKET.value,
+            bucket_key="bronze/bonds_meta/ymd={{ ds }}/bonds_meta_{{ execution_date.strftime('%Y-%m') }}.json",
+            poke_interval=60,
+            timeout=600,
+            aws_conn_id="aws_conn_id",
+            task_id=f"wait_for_brz_bonds_meta",
+            mode="reschedule",
+        )
+        wait
 
     group_success_check = EmptyOperator(
         task_id="slv_bonds_meta_sensor_group_completion_check"
@@ -57,8 +50,7 @@ with DAG(
         task_id="slv_bonds_meta_brancher",
         python_callable=to_crawl_or_not_to_crawl,
         op_args=[
-            "{{ ds }}",
-            AirflowParam.START_DATE.value,
+            AirflowParam.FIRST_RUN.value,
             "slv_bonds_meta_crawler",
             "slv_bonds_meta_skipper",
         ],
@@ -70,14 +62,7 @@ with DAG(
             "Name": "Team3-test",
             "Role": "AWSGlueServiceRole-Team3-1",
             "DatabaseName": "team3-db",
-            "Targets": {
-                "S3Targets": [
-                    {"Path": "s3://team3-1-s3/bronze/govt_bonds_kr_meta/"},
-                    {"Path": "s3://team3-1-s3/bronze/govt_bonds_us_meta/"},
-                    {"Path": "s3://team3-1-s3/bronze/corp_bonds_kr_meta/"},
-                    {"Path": "s3://team3-1-s3/bronze/corp_bonds_us_meta/"},
-                ]
-            },
+            "Targets": {"S3Targets": [{"Path": "s3://team3-1-s3/bronze/bonds_meta/"}]},
         },
         aws_conn_id="aws_conn_id",
         wait_for_completion=True,
@@ -94,8 +79,9 @@ with DAG(
         iam_role_name="AWSGlueServiceRole-Team3-1",
         num_of_dpus=2,
         create_job_kwargs={
-            "GlueVersion": "3.0",
-            "MaxCapacity": 10,
+            "GlueVersion": "5.0",
+            "WorkerType": "G.2X",
+            "NumberOfWorkers": 10,
         },
         aws_conn_id="aws_conn_id",
     )

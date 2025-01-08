@@ -19,8 +19,8 @@ def get_categories():
         )
     except Exception as e:
         raise Exception(e)
-    resp = json.loads(file)
-    return {category: [bond_name for bond_name in resp[category]] for category in resp}
+
+    return json.loads(file)
 
 
 def convert_date(us_dt_string):

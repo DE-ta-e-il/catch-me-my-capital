@@ -10,6 +10,7 @@ class AirflowParam(Enum):
     # NOTE: For full-refresh test, glue job cost was taken into consideration😫
     BONDS_META_START_DATE = datetime(2025, 1, 1)
     # (datetime.now() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    FIRST_RUN = True
 
 
 class ProvidersParam(Enum):
