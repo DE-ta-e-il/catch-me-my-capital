@@ -80,14 +80,15 @@ with DAG(
 
     run_krx_glue_job = GlueJobOperator(
         task_id="krx_industry_code_job",
-        job_name="slv_industry_code_daily",
+        job_name="team3_slv_industry_code_daily",
         script_location="s3://team3-1-s3/glue_job_scripts/industry_code_glue_job.py",
         region_name="ap-northeast-2",
         iam_role_name="AWSGlueServiceRole-Team3-1",
         num_of_dpus=2,
         create_job_kwargs={
-            "GlueVersion": "3.0",
-            "MaxCapacity": 10,
+            "GlueVersion": "5.0",
+            "WorkerType": "G.2X",
+            "NumberOfWorkers": 10,
         },
         aws_conn_id="aws_conn_id",
     )

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 # A rough patch taking advantage of the fact that the table's schema rarely changes
