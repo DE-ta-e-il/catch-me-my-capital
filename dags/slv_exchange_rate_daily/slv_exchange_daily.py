@@ -26,7 +26,7 @@ with DAG(
     # bronze 레이어 DAG 완료 대기
     wait_for_bronze = ExternalTaskSensor(
         task_id="wait_for_bronze",
-        external_dag_id="brz_exchange_daily",
+        external_dag_id="brz_exchange_rate_daily",
         external_task_id="fetch_exchange_rates",  # bronze DAG의 마지막 task
         timeout=600,  # 10분
         mode="reschedule",  # 실패 시 재시도 방식
