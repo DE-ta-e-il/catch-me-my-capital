@@ -23,4 +23,4 @@ jobs:
 
     - name: Upload Glue Script to S3
       run: |
-        aws s3 sync ./glue_job_scripts/ s3://team3-1-s3/glue_job_scripts/ --delete
+        aws s3 sync ./glue_job_scripts/ s3://team3-1-s3/glue_job_scripts/
