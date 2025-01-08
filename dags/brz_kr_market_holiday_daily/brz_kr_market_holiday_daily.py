@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
+from airflow.utils.state import DagRunState
 from common.constants import Interval, Layer, Owner
 
 from brz_kr_market_holiday_daily.tasks import (
@@ -28,3 +30,11 @@ with DAG(
         task_id="fetch_kr_market_holiday_to_s3",
         python_callable=fetch_krx_market_holiday_to_s3,
     )
+
+    trigger_calendar_update = TriggerDagRunOperator(
+        task_id="trigger_dag_task",
+        trigger_dag_id="slv_calendar_holiday_update_daily",
+        wait_for_completion=False,
+    )
+
+    fetch_krx_market_holiday_to_s3 >> trigger_calendar_update
