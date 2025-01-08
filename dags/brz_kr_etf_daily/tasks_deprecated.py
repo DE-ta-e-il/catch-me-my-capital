@@ -1,6 +1,6 @@
 import json
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 from airflow.models import Variable
@@ -36,7 +36,7 @@ def is_kr_market_open_today(today: datetime) -> bool:
         last_weekday = datetime(today.year, 12, 31)
 
         while last_weekday.weekday() > 4:
-            last_weekday -= datetime.timedelta(days=1)
+            last_weekday -= timedelta(days=1)
 
         last_weekday_nodash = last_weekday.strftime("%Y%m%d")
         locdates.append(last_weekday_nodash)
@@ -49,7 +49,7 @@ def is_kr_market_open_today(today: datetime) -> bool:
 
 
 def generate_json_s3_key(today_dash: str) -> str:
-    return f"bronze/kr_etf/ymd={today_dash}/data.json"
+    return f"bronze/kr_etf_old/ymd={today_dash}/data.json"
 
 
 def verify_market_open(ds_nodash):
@@ -85,7 +85,7 @@ def fetch_etf_from_krx_web_to_s3(ds_nodash, ds):
             f"Data retrieval failed: 'output' is missing or empty. Full data: {data}"
         )
 
-    data_str = json.dumps(items, ensure_ascii=False)
+    data_str = json.dumps(data, ensure_ascii=False)
     s3_key = generate_json_s3_key(ds)
 
     upload_string_to_s3(data_str, s3_key)

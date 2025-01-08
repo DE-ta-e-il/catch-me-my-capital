@@ -69,7 +69,7 @@ def fetch_etf_from_krx_api_to_s3(**kwargs):
 
         params["pageNo"] = current_page + 1
 
-    data_str = json.dumps(all_items, ensure_ascii=False)
+    data_str = json.dumps({"items": all_items}, ensure_ascii=False)
     s3_key = generate_json_s3_key(target_date)
 
     upload_string_to_s3(data_str, s3_key)

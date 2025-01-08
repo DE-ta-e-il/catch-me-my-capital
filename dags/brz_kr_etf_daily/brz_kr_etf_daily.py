@@ -19,18 +19,18 @@ REDSHIFT_USER = Variable.get("redshift_cluster_master_user")
 SCHEMA = Redshift.SchemaName.SILVER
 TABLE = Redshift.TableName.DIM_CALENDAR
 GET_WORKDAY_SQL = f"""
-SELECT
-    dc."date" AS today_date,
-    dc.is_market_holiday AS today_is_holiday,
-    (
-        SELECT MAX(dc_sub."date")
-        FROM {SCHEMA}.{TABLE} dc_sub
-        WHERE dc_sub."date" < dc."date" 
-            AND dc_sub.is_market_holiday = False) AS previous_working_day
-FROM {SCHEMA}.{TABLE} dc
-WHERE dc."date" = :current_date
-;
-"""
+    SELECT
+        dc."date" AS today_date,
+        dc.is_market_holiday AS today_is_holiday,
+        (
+            SELECT MAX(dc_sub."date")
+            FROM {SCHEMA}.{TABLE} dc_sub
+            WHERE dc_sub."date" < dc."date" 
+                AND dc_sub.is_market_holiday = False) AS previous_working_day
+    FROM {SCHEMA}.{TABLE} dc
+    WHERE dc."date" = :current_date
+    ;
+    """
 
 default_args = {
     "owner": Owner.JUNGMIN,
@@ -44,7 +44,7 @@ with DAG(
     description="한국거래소 ETF 종목별 시세",
     tags=[Layer.BRONZE, "ETF", Interval.DAILY.label, "weekday"],
     schedule="0 5 * * 1-5",
-    start_date=datetime(2025, 1, 1),  # 과거 데이터는 별도로 한번에 처리
+    start_date=datetime(2020, 1, 3),
     catchup=True,
     max_active_runs=5,
 ) as dag:
