@@ -41,7 +41,7 @@ final_df = (
 
 def table_exists():
     s3 = boto3.client("s3")
-    resp = s3.list_objects_v2(Bucket="team3-1-s3", Prefix="silver/bonds/fact_bonds/")
+    resp = s3.list_objects_v2(Bucket="team3-1-s3", Prefix="silver/bonds/")
     if "Contents" in resp:
         for obj in resp["Contents"]:
             if obj["Key"].endswith(".parquet"):
@@ -51,7 +51,7 @@ def table_exists():
 
 if table_exists():
     existing_df = spark.read.parquet(
-        "s3://team3-1-s3/silver/bonds/fact_bonds", {"mergeSchema": True}
+        "s3://team3-1-s3/silver/bonds", {"mergeSchema": True}
     )
 
     # Upsert
@@ -86,11 +86,13 @@ def get_secret():
 
     try:
         get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+        redshift_jdbc = client.get_secret_value(SecretId="redshift-jdbc-conn")
     except ClientError as e:
         raise e
 
     secret = json.loads(get_secret_value_response["SecretString"])
-    return secret["username"], secret["password"]
+    jdbc = json.loads(redshift_jdbc["SecretString"])
+    return secret["username"], secret["password"], jdbc["redshift_jdbc_conn"]
 
 
 secrets = get_secret()
@@ -100,12 +102,12 @@ WriteToRedshift_bonds = glueContext.write_dynamic_frame.from_options(
     frame=dynamic_frame,
     connection_type="redshift",
     connection_options={
-        "url": "jdbc:redshift://team3-1-cluster.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com:5439/dev",
+        "url": secrets[2],
         "user": secrets[0],
         "password": secrets[1],
         "dbtable": "silver.fact_bonds",
-        # "redshiftTmpDir": "s3://team3-1-s3/data/redshift_temp/bonds/",
-        "preactions": "DROP TABLE IF EXISTS silver.fact_bonds; CREATE TABLE silver.fact_bonds (yield DECIMAL(6, 3), volume BIGINT, date TIMESTAMP, matures_in BIGINT, created_at TIMESTAMP, updated_at TIMESTAMP, bond_key VARCHAR, bond_type VARCHAR);",
+        "redshiftTmpDir": "s3://team3-1-s3/data/redshift_temp/bonds/",
+        "preactions": "DROP TABLE IF EXISTS silver.fact_bonds; CREATE TABLE silver.fact_bonds (yield DECIMAL(6, 3), volume DECIMAL(12, 2), date TIMESTAMP, matures_in BIGINT, created_at TIMESTAMP, updated_at TIMESTAMP, bond_key VARCHAR, bond_type VARCHAR);",
     },
     transformation_ctx="WriteToRedshift_bonds",
 )
