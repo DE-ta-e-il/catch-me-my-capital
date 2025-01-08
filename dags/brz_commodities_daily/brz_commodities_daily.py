@@ -21,7 +21,7 @@ CATEGORY = "commodities"
 with DAG(
     dag_id="brz_commodities_daily",
     description="Daily pipeline to acquire and store market data for commodities.",
-    schedule="@daily",
+    schedule_interval="0 7 * * *",
     start_date=pendulum.datetime(2015, 1, 1),
     catchup=False,
     default_args=default_args,

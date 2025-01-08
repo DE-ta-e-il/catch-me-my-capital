@@ -22,7 +22,7 @@ TARGET_TABLE = "fact_commodities_price"
 with DAG(
     dag_id="slv_commodities_daily",
     description="Daily pipeline to transform market data for commodities.",
-    schedule="@daily",
+    schedule_interval="0 7 * * *",
     start_date=pendulum.datetime(2015, 1, 1),
     catchup=False,
     default_args=default_args,
