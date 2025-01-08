@@ -19,7 +19,7 @@ with DAG(
         "retry_delay": timedelta(minutes=5),
     },
     schedule_interval="0 0 * * 1-5",
-    start_date=datetime(2024, 12, 1),
+    start_date=datetime(2025, 1, 6),
     catchup=True,
     max_active_tasks=5,
     tags=[Layer.BRONZE, Interval.DAILY.label],
