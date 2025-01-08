@@ -56,7 +56,7 @@ def get_metadata(**ctxt):
                     content = cols[1].text.strip()
                     if content:
                         if header == "issue_volume":
-                            content = int(content.replace(",", ""))
+                            content = content.replace(",", "")
                         if header in [
                             "coupon",
                             "issue_price",
@@ -69,8 +69,9 @@ def get_metadata(**ctxt):
                         if header == "floater":
                             content = True if content == "Yes" else False
                         parsed[header] = parsed.get(header, content)
-            parsed.update({"bond_type": category[:4], "bond_key": bond_key})
-            payload.append(parsed)
+            if parsed:  # don't insert empty row
+                parsed.update({"bond_type": category[:4], "bond_key": bond_key})
+                payload.append(parsed)
 
     date = datetime.strptime(ctxt["ds"], "%Y-%m-%d").strftime("%Y-%m-%d")
     key = f"bronze/bonds_meta/ymd={date}/bonds_meta_{date[:7]}.json"

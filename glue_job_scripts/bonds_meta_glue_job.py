@@ -27,6 +27,10 @@ df = glueContext.create_dynamic_frame.from_options(
         "groupFiles": "inPartition",
     },
     format="json",
+    format_options={
+        "jsonPath": "$[*]",
+        "multiline": True,
+    },
 ).toDF()
 
 stamped = (
@@ -38,7 +42,7 @@ stamped = (
 
 def table_exists():
     s3 = boto3.client("s3")
-    resp = s3.list_objects_v2(Bucket="team3-1-s3", Prefix="silver/bonds_meta/")
+    resp = s3.list_objects_v2(Bucket="team3-1-s3", Prefix="silver/bonds_meta")
     if "Contents" in resp:
         for obj in resp["Contents"]:
             if obj["Key"].endswith(".parquet"):
@@ -47,23 +51,28 @@ def table_exists():
 
 
 if table_exists():
-    existing_df = spark.read.parquet(
-        "s3://team3-1-s3/silver/bonds_meta/fact_bonds_meta"
-    )
-
+    existing_df = spark.read.parquet("s3://team3-1-s3/silver/bonds_meta")
     column_selector = [
+        # non-null
         F.coalesce(F.col("new.updated_at"), F.col("existing.updated_at")).alias(
             "updated_at"
         )
         if col == "updated_at"
-        else col
-        for col in stamped.columns
+        else F.coalesce(F.col(f"new.{col}"), F.col(f"existing.{col}")).alias(col)
+        for col in existing_df.columns
     ]
-    stamped = (
+    # outer join
+    merged = (
         existing_df.alias("existing")
         .join(stamped.alias("new"), ["bond_key"], "outer")
         .select(*column_selector)
     )
+    # new ones
+    stamped = merged.filter(
+        (F.col("new.updated_at").isNotNull())  # if not null, it's a new one!
+        & (F.col("new.updated_at") != F.col("existing.updated_at"))
+    )
+
 
 # Write back to s3
 stamped.write.mode("overwrite").parquet("s3://team3-1-s3/silver/bonds_meta")
@@ -86,13 +95,13 @@ def get_secret():
         raise e
 
     secret = json.loads(get_secret_value_response["SecretString"])
-    return secret["username"], secret["password"], redshift_jdbc["redshift_jdbc_conn"]
+    jdbc = json.loads(redshift_jdbc["SecretString"])
+    return secret["username"], secret["password"], jdbc["redshift_jdbc_conn"]
 
 
 secrets = get_secret()
 
-# Full-refresh the upserted frame to Redshift cuz who needs this bs
-WriteToRedshift_bonds = glueContext.write_dynamic_frame.from_options(
+WriteToRedshift_bonds_meta = glueContext.write_dynamic_frame.from_options(
     frame=dynamic_frame,
     connection_type="redshift",
     connection_options={
@@ -103,7 +112,7 @@ WriteToRedshift_bonds = glueContext.write_dynamic_frame.from_options(
         "redshiftTmpDir": "s3://team3-1-s3/data/redshift_temp/bonds_meta/",
         "preactions": "DROP TABLE IF EXISTS silver.fact_bonds_meta; CREATE TABLE silver.fact_bonds_meta (isin VARCHAR, name VARCHAR, country VARCHAR, issuer VARCHAR, issue_volume BIGINT, currency VARCHAR, issue_price DECIMAL(6, 3), issue_date DATE, coupon DECIMAL(4, 3), denomination DECIMAL(10, 2), payment_type VARCHAR, maturity_date DATE, coupon_payment_date DATE, no_of_payments_per_year DECIMAL(3, 1), coupon_start_date DATE, final_coupon_date DATE, isfloater BOOLEAN, bond_key VARCHAR, created_at TIMESTAMP, updated_at TIMESTAMP, bond_type VARCHAR);",
     },
-    transformation_ctx="WriteToRedshift_bonds",
+    transformation_ctx="WriteToRedshift_bonds_meta",
 )
 
 job.commit()

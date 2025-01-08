@@ -77,7 +77,6 @@ with DAG(
         script_location="s3://team3-1-s3/glue_job_scripts/bonds_meta_glue_job.py",
         region_name="ap-northeast-2",
         iam_role_name="AWSGlueServiceRole-Team3-1",
-        num_of_dpus=2,
         create_job_kwargs={
             "GlueVersion": "5.0",
             "WorkerType": "G.2X",
