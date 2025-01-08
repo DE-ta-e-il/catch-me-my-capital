@@ -23,7 +23,7 @@ with DAG(
     start_date=datetime(2025, 1, 1),
     default_args=default_args,
     tags=[Layer.BRONZE, "market holiday", Interval.DAILY.label],
-    catchup=True,
+    catchup=False,
     max_active_runs=3,
 ) as dag:
     fetch_krx_market_holiday_to_s3 = PythonOperator(
@@ -34,6 +34,7 @@ with DAG(
     trigger_calendar_update = TriggerDagRunOperator(
         task_id="trigger_dag_task",
         trigger_dag_id="slv_calendar_holiday_update_daily",
+        logical_date="{{ logical_date }}",
         wait_for_completion=False,
     )
 

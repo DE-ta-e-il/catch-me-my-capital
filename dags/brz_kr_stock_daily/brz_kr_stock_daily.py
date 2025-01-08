@@ -22,7 +22,7 @@ with DAG(
     schedule="0 5 * * 1-5",
     start_date=datetime(2025, 1, 1),
     catchup=True,
-    max_active_runs=5,
+    max_active_runs=1,
 ) as dag:
     fetch_kr_stock_data = YFinanceOperator(
         task_id="fetch_kr_stock_data",

@@ -22,30 +22,13 @@ with DAG(
     dag_id="slv_calendar_holiday_update_daily",
     description="캘린더에 휴장일 업데이트",
     default_args=default_args,
-    tags=[Layer.SILVER, "market holiday", Interval.DAILY.label],
+    tags=[Layer.SILVER, "market holiday", "triggered", Interval.DAILY.label],
     max_active_runs=1,
 ) as dag:
-    crawl_market_holiday = GlueCrawlerOperator(
-        task_id="crawl_market_holiday",
-        config={
-            "Name": "team3-crawler",
-            "Role": GLUE_ROLE,
-            "DatabaseName": "team3-db",
-            "Targets": {
-                "S3Targets": [
-                    {"Path": f"s3://{S3_BUCKET}/bronze/market_holiday/"},
-                ]
-            },
-        },
-        aws_conn_id=AWS_CONN_ID,
-        region_name=AWS_REGION,
-    )
-
     run_holiday_update_glue_job = GlueJobOperator(
         task_id="market_holiday_update_job",
         job_name="slv_calendar_holiday_update_daily",
         script_location=f"s3://{S3_BUCKET}/glue_job_scripts/calendar_holiday_update_glue_job.py",
-        # script_location=f"s3://aws-glue-assets-862327261051-ap-northeast-2/scripts/team3-calendar-holiday.py",
         script_args={"--current_year": "{{ logical_date.year }}"},
         region_name=AWS_REGION,
         iam_role_name=GLUE_ROLE,
@@ -58,4 +41,4 @@ with DAG(
         aws_conn_id=AWS_CONN_ID,
     )
 
-    crawl_market_holiday >> run_holiday_update_glue_job
+    run_holiday_update_glue_job

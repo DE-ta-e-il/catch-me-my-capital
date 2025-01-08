@@ -30,7 +30,7 @@ with DAG(
     start_date=datetime(2013, 12, 1),
     default_args=default_args,
     tags=[Layer.SILVER, "calender", Interval.YEARLY.label, "Redshift"],
-    catchup=True,
+    catchup=False,
     max_active_runs=1,
 ) as dag:
     create_calendar_table = RedshiftDataOperator(
