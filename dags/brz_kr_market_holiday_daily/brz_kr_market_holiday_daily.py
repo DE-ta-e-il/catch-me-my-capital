@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from common.constants import Owner
+from common.constants import Interval, Layer, Owner
 
 from brz_kr_market_holiday_daily.tasks import (
     fetch_krx_market_holiday_to_s3,
@@ -20,8 +20,9 @@ with DAG(
     schedule="@daily",
     start_date=datetime(2025, 1, 1),
     default_args=default_args,
-    tags=["bronze", "market holiday", "daily"],
-    catchup=False,
+    tags=[Layer.BRONZE, "market holiday", Interval.DAILY.label],
+    catchup=True,
+    max_active_runs=3,
 ) as dag:
     fetch_krx_market_holiday_to_s3 = PythonOperator(
         task_id="fetch_kr_market_holiday_to_s3",
