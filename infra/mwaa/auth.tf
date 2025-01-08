@@ -16,6 +16,6 @@ resource "aws_iam_policy" "mwaa_secrets_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "mwaa_policy_attachment" {
-  role       = "mwaa-executor20250108052936414300000003"
+  role       = module.mwaa.mwaa_role_name
   policy_arn = aws_iam_policy.mwaa_secrets_policy.arn
 }

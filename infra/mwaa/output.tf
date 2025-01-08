@@ -23,6 +23,11 @@ output "mwaa_role_arn" {
   value       = module.mwaa.mwaa_role_arn
 }
 
+output "mwaa_role_name" {
+  description = "MWAA의 IAM Role 이름"
+  value       = module.mwaa.mwaa_role_name
+}
+
 output "aws_s3_bucket_name" {
   description = "MWAA 환경 관련 S3 버킷명"
   value       = local.bucket_name
