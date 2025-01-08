@@ -8,16 +8,26 @@ from airflow.exceptions import AirflowSkipException
 from airflow.models import Variable
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from common.constants import AwsConfig, ConnId, Layer
 
 
 class YFinanceOperator(PythonOperator):
     S3_KEY_TEMPLATE = "{layer}/{category}/{partition_key}={date}/data.csv"
+    MARKET_MAPPING = {"kospi": "KS", "kosdaq": "KQ"}
 
-    def __init__(self, category: str, tickers: List[str], *args, **kwargs):
+    def __init__(
+        self,
+        category: str,
+        tickers: List[str] | None = None,
+        query: str | None = None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(python_callable=self.fetch_price_data, *args, **kwargs)
         self.category = category
         self.tickers = tickers
+        self.query = query
 
     def fetch_price_data(
         self,
@@ -31,9 +41,11 @@ class YFinanceOperator(PythonOperator):
             data_interval_start (pendulum.DateTime): 데이터 수집 시작 시점
             data_interval_end (pendulum.DateTime): 데이터 수집 종료 시점 (포함되지 않음)
         """
-
         start_date = data_interval_start.strftime("%Y-%m-%d")
         end_date = data_interval_end.strftime("%Y-%m-%d")
+
+        if self.query:
+            self._fetch_tickers_from_redshift(start_date)
 
         data = self._fetch_price_data_from_yfinance(start_date, end_date)
 
@@ -44,6 +56,30 @@ class YFinanceOperator(PythonOperator):
             date=start_date,
         )
         self._upload_data_to_s3(data, s3_key)
+
+    def _fetch_tickers_from_redshift(self, target_date: str) -> None:
+        """
+        Redshift에서 해당 일자의 주식 목록을 가져옵니다.
+
+        Args:
+            target_date (str): 주식을 수집하는 날짜
+        """
+        hook = PostgresHook(postgres_conn_id="redshift_dev_db")
+
+        conn = hook.get_conn()
+        conn.autocommit = True
+        cur = conn.cursor()
+
+        cur.execute(self.query, (target_date,))
+
+        data = cur.fetchall()  # [('138930', 'kospi'), ('079160', 'kospi'), ...]
+        cur.close()
+        conn.close()
+
+        if not data:
+            raise AirflowSkipException("The data list is empty.")
+
+        self.tickers = [f"{item[0]}.{self.MARKET_MAPPING[item[1]]}" for item in data]
 
     def _fetch_price_data_from_yfinance(
         self, start_date: str, end_date: str

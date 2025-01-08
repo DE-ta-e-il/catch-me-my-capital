@@ -1,10 +1,10 @@
+import json
 import time
 from datetime import datetime
 
 import requests
 from bs4 import BeautifulSoup
-
-from brz_industry_code_daily.uploaders import upload_codes_to_s3
+from common.s3_utils import upload_string_to_s3
 
 
 # For KRX APIs' industry codes
@@ -58,8 +58,9 @@ def fetch_industry_codes(market, referer, mktId, **ctxt):
     if len(new_items) == 0:
         raise Exception("NOPE NOT GETTING ANY")
 
-    key = f"bronze/industry_code/ymd={date}/krx_codes_{date}.json"
-    upload_codes_to_s3(new_items, key)
+    key = f"bronze/industry_code/krx_codes/ymd={date}/krx_codes_{date}.json"
+    stringified = json.dumps(new_items, indent=4, ensure_ascii=False)
+    upload_string_to_s3(stringified, key)
 
 
 # For crawling GICS
@@ -104,5 +105,6 @@ def crawl_industry_codes(**ctxt):
         "industry": industry,
         "sub_industry": sub_industry,
     }.items():
-        key = f"bronze/industry_code/ymd={date}/gics_{category}_codes_{date}.json"
-        upload_codes_to_s3(payload, key)
+        key = f"bronze/industry_code/gics_codes/ymd={date}/gics_{category}_codes_{date}.json"
+        stringified = json.dumps(payload, indent=4)
+        upload_string_to_s3(stringified, key)
