@@ -10,7 +10,7 @@ class AirflowParam(Enum):
     # NOTE: For full-refresh test, glue job cost was taken into consideration😫
     START_DATE = datetime(2015, 1, 1)
     # Set it to False after first run
-    FIRST_RUN = True
+    FIRST_RUN = False
 
 
 class ProvidersParam(Enum):

@@ -16,10 +16,11 @@ default_args = {
     "retry_delay": timedelta(minutes=1),
 }
 
+# Triggered by its upstream DAG, it needed the schedule interval no more, the end!
 with DAG(
     dag_id="slv_bonds_daily",
     default_args=default_args,
-    schedule_interval="0 0 * * 1-5",
+    schedule_interval=None,
     catchup=False,
     tags=["silver", "bonds", "daily"],
     max_active_tasks=2,
