@@ -75,6 +75,7 @@ module "mwaa" {
   source_bucket_arn    = aws_s3_bucket.this.arn
   dag_s3_path          = "dags"
   requirements_s3_path = "requirements.txt"
+  plugins_s3_path      = "plugins.zip"
 
   vpc_id             = module.vpc.vpc_id
   private_subnet_ids = slice("${module.vpc.private_subnets}", 0, 2)
