@@ -19,7 +19,7 @@ default_args = {
 with DAG(
     dag_id="slv_index_daily",
     default_args=default_args,
-    schedule_interval="0 0 * * 2-6",
+    schedule_interval="0 0 * * 1-5",
     catchup=False,
     tags=[Layer.SILVER, Interval.DAILY.label],
 ) as dag:
