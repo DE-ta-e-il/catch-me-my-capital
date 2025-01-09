@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 def fetch_index_data(symbols, index_tmp_file_path, index_data_s3_key, **kwargs):
-    modified_response = {}
+    modified_response = []
 
     for symbol, code in symbols.items():
         # cloudscraper 객체 생성
@@ -40,7 +40,9 @@ def fetch_index_data(symbols, index_tmp_file_path, index_data_s3_key, **kwargs):
         response_json = response.json()
         # 휴장일에는 데이터가 None으로 반환됨 - 각 시장마다 휴장일이 다르므로 이렇게 처리
         if response_json["data"] is not None:
-            modified_response[symbol] = response_json["data"][0]
+            data = response_json["data"][0]
+            data["index_name"] = symbol
+            modified_response.append(data)
 
     # json 파일로 저장
     with open(index_tmp_file_path, "w") as f:
