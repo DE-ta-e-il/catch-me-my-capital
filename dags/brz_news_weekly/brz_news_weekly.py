@@ -17,9 +17,11 @@ with DAG(
     dag_id="brz_news_weekly",
     default_args=default_args,
     schedule_interval="@weekly",
-    start_date=datetime(2024, 12, 22),
-    catchup=True,
+    start_date=datetime(2025, 1, 1),
+    catchup=False,
     tags=[Layer.BRONZE, Interval.WEEKLY.label],
+    max_active_runs=2,
+    max_active_tasks=2,
 ) as dag:
     fetch_news_data_task = PythonOperator(
         task_id="fetch_news_data",
