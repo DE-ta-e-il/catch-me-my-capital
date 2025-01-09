@@ -4,6 +4,9 @@
 ### Linux ###
 *~
 
+# DBT
+profiles.yml
+
 # Airflow
 logs/
 
