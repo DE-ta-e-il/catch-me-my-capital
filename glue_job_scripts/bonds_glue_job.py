@@ -19,14 +19,8 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 
-df = glueContext.create_dynamic_frame.from_options(
-    connection_type="s3",
-    connection_options={
-        "paths": ["s3://team3-1-s3/bronze/bonds/"],
-        "recurse": True,
-        "groupFiles": "inPartition",
-    },
-    format="json",
+df = glueContext.create_dynamic_frame.from_catalog(
+    database="team3-db", table_name="bonds"
 ).toDF()
 
 final_df = (
