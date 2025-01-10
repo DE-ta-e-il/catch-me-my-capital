@@ -25,11 +25,21 @@ job.init(args["JOB_NAME"], args)
 # spark = glueContext.spark_session
 # job = Job(glueContext)
 
-df = glueContext.create_dynamic_frame.from_catalog(
-    database="team3-db", table_name="bonds"
+dyf = glueContext.create_dynamic_frame.from_options(
+    connection_type="s3",
+    connection_options={
+        "paths": ["s3://team3-1-s3/bronze/bonds/"],
+        "recurse": True,
+        "groupFiles": "inPartition",
+    },
+    format="json",
+    format_options={
+        "jsonPath": "$[*]",
+        "multiline": True,
+    },
 )
 
-df = df.toDF()
+df = dyf.toDF()
 
 final_df = (
     df.withColumn("created_at", current_timestamp())
@@ -41,39 +51,41 @@ final_df = (
 )
 
 
-def table_exists():
-    s3 = boto3.client("s3")
-    resp = s3.list_objects_v2(Bucket="team3-1-s3", Prefix="silver/bonds/")
-    if "Contents" in resp:
-        for obj in resp["Contents"]:
-            if obj["Key"].endswith(".parquet"):
-                return True
-    return False
+# def table_exists():
+#     s3 = boto3.client("s3")
+#     resp = s3.list_objects_v2(Bucket="team3-1-s3", Prefix="silver/bonds/")
+#     if "Contents" in resp:
+#         for obj in resp["Contents"]:
+#             if obj["Key"].endswith(".parquet"):
+#                 return True
+#     return False
 
 
-if table_exists():
-    existing_df = spark.read.parquet(
-        "s3://team3-1-s3/silver/bonds", {"mergeSchema": True}
-    )
+# if table_exists():
+#     existing_df = spark.read.parquet(
+#         "s3://team3-1-s3/silver/bonds", {"mergeSchema": True}
+#     )
 
-    # Upsert
-    final_df = (
-        existing_df.alias("existing")
-        .join(final_df.alias("new"), ["date", "bond_key"], "outer")
-        .select(
-            F.coalesce(F.col("new.yield"), F.col("existing.yield")).alias("yield"),
-            F.coalesce(F.col("new.volume"), F.col("existing.volume")).alias("volume"),
-            F.col("new.date").alias("date"),
-            F.col("new.bond_key").alias("bond_key"),
-            F.coalesce(F.col("new.matures_in"), F.col("existing.matures_in")).alias(
-                "matures_in"
-            ),
-            F.col("new.bond_type").alias("bond_type"),
-        )
-    )
+#     # Upsert
+#     final_df = (
+#         existing_df.alias("existing")
+#         .join(final_df.alias("new"), ["date", "bond_key"], "outer")
+#         .select(
+#             F.coalesce(F.col("new.yield"), F.col("existing.yield")).alias("yield"),
+#             F.coalesce(F.col("new.volume"), F.col("existing.volume")).alias("volume"),
+#             F.col("new.date").alias("date"),
+#             F.col("new.bond_key").alias("bond_key"),
+#             F.coalesce(F.col("new.matures_in"), F.col("existing.matures_in")).alias(
+#                 "matures_in"
+#             ),
+#             F.col("new.bond_type").alias("bond_type"),
+#         )
+#     )
+
+final_df = final_df.dropna()
 
 # Write back to s3
-final_df.write.mode("overwrite").parquet("s3://team3-1-s3/silver/bonds/")
+# final_df.write.mode("overwrite").parquet("s3://team3-1-s3/silver/bonds/")
 
 # Revert back to DynamicFrame
 dynamic_frame = DynamicFrame.fromDF(final_df, glueContext, "dynamic_frame")
@@ -109,7 +121,7 @@ WriteToRedshift_bonds = glueContext.write_dynamic_frame.from_options(
         "password": secrets[1],
         "dbtable": "silver.fact_bonds",
         "redshiftTmpDir": "s3://team3-1-s3/data/redshift_temp/bonds/",
-        "preactions": "DROP TABLE IF EXISTS silver.fact_bonds; CREATE TABLE silver.fact_bonds (yield DECIMAL(6, 3), volume DECIMAL(12, 2), date TIMESTAMP, matures_in BIGINT, created_at TIMESTAMP, updated_at TIMESTAMP, bond_key VARCHAR, bond_type VARCHAR);",
+        "preactions": "DROP TABLE IF EXISTS silver.fact_bonds; CREATE TABLE silver.fact_bonds (yield DOUBLE PRECISION, volume DOUBLE PRECISION, date VARCHAR, bond_key VARCHAR, bond_type VARCHAR, matures_in INTEGER, created_at TIMESTAMP, updated_at TIMESTAMP);",
     },
     transformation_ctx="WriteToRedshift_bonds",
 )
