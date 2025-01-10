@@ -2,3 +2,5 @@ yfinance==0.2.51
 requests
 bs4
 apache-airflow-providers-amazon
+dbt-core==1.8
+dbt-redshift==1.8
