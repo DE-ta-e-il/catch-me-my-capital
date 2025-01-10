@@ -1,4 +1,3 @@
-fail_fast: true
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -17,7 +16,7 @@ repos:
         name: Detect secrets
         language: python
         entry: detect-secrets-hook
-        args: ['--baseline', '.secrets.baseline']
+        args: ["--baseline", ".secrets.baseline"]
   - repo: local
     hooks:
       - id: add-ticket-number
@@ -32,3 +31,14 @@ repos:
         files: "^infra/.*\\.tf$"
       - id: terraform_validate
         files: "^infra/.*\\.tf$"
+  - repo: https://github.com/sqlfluff/sqlfluff
+    rev: 3.3.0
+    hooks:
+      - id: sqlfluff-lint
+        args: [--dialect, "redshift", --config, "./.sqlfluff"]
+        additional_dependencies:
+          ["dbt-redshift==1.9.0", "sqlfluff-templater-dbt"]
+      - id: sqlfluff-fix
+        args: [--dialect, "redshift", --config, "./.sqlfluff"]
+        additional_dependencies:
+          ["dbt-redshift==1.9.0", "sqlfluff-templater-dbt"]

@@ -2,3 +2,4 @@
 lint.select = ["I"]
 fix = true
 line-length = 88
+exclude = [".sqlfluff"]
