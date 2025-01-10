@@ -22,6 +22,7 @@ with DAG(
         "retry_delay": timedelta(minutes=1),
     },
     max_active_tasks=2,
+    max_active_runs=1,
     tags=["bronze", "bonds metadata", "monthly"],
     description="All Bonds Metadata, States And Corps",
 ) as dag:
