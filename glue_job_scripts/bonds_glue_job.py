@@ -21,7 +21,25 @@ job.init(args["JOB_NAME"], args)
 
 df = glueContext.create_dynamic_frame.from_catalog(
     database="team3-db", table_name="bonds"
-).toDF()
+)
+
+# column resolution
+df = df.resolveChoice(
+    specs=[
+        ("Close", "project:double"),
+        ("Open", "project:double"),
+        ("High", "project:double"),
+        ("Volume", "project:double"),
+        ("Estimate", "project:double"),
+        ("Date", "project:string"),
+        ("bond_key", "project:string"),
+        ("bonb_type", "project:string"),
+        ("matures_in", "project:int"),
+    ]
+)
+
+df = df.toDF()
+
 
 final_df = (
     df.withColumn("created_at", current_timestamp())
@@ -69,6 +87,20 @@ final_df.write.mode("overwrite").parquet("s3://team3-1-s3/silver/bonds/")
 
 # Revert back to DynamicFrame
 dynamic_frame = DynamicFrame.fromDF(final_df, glueContext, "dynamic_frame")
+
+dynamic_frame = dynamic_frame.resolveChoice(
+    specs=[
+        ("Close", "project:double"),
+        ("Open", "project:double"),
+        ("High", "project:double"),
+        ("Volume", "project:double"),
+        ("Estimate", "project:double"),
+        ("Date", "project:string"),
+        ("bond_key", "project:string"),
+        ("bonb_type", "project:string"),
+        ("matures_in", "project:int"),
+    ]
+)
 
 
 def get_secret():
