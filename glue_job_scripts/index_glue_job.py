@@ -17,6 +17,7 @@ from pyspark.sql.functions import (
     current_timestamp,
     input_file_name,
     regexp_extract,
+    regexp_replace,
     to_date,
 )
 from pyspark.sql.types import DateType, DecimalType, StringType
@@ -55,7 +56,7 @@ secrets = get_secret()
 # Redshift에서 테이블 존재 여부 확인
 def check_table_exists():
     jdbc_url = secrets[2]
-    query = "SELECT 1 FROM pg_tables WHERE tablename = 'fact_msci_index' AND schemaname = 'silver'"
+    query = "SELECT 1 FROM pg_tables WHERE tablename = 'fact_index_data' AND schemaname = 'silver'"
 
     try:
         result_df = (
@@ -79,7 +80,7 @@ def get_latest_date_from_redshift():
         return datetime.strptime("2015-01-01", "%Y-%m-%d").date()
 
     jdbc_url = secrets[2]
-    query = "(SELECT MAX(date) AS max_date FROM silver.fact_msci_index)"
+    query = "(SELECT MAX(date) AS max_date FROM silver.fact_index_data)"
 
     try:
         redshift_df = (
@@ -126,7 +127,7 @@ latest_date = get_latest_date_from_redshift()
 
 # S3에서 특정 날짜 이후의 경로 가져오기
 bucket_name = "team3-1-s3"
-prefix = "bronze/msci_index/"
+prefix = "bronze/index_data/"
 s3_paths = get_s3_paths_after_date(bucket_name, prefix, latest_date)
 
 # S3 경로가 비어 있을 경우 Job 종료
@@ -147,16 +148,19 @@ bronze_df = bronze_df.withColumn(
     "ymd", regexp_extract("file_path", "ymd=([^/]+)", 1)
 ).drop("file_path")
 
-# 필요한 컬럼만 선택
+
+# silver df 생성
 silver_df = bronze_df.select(
     to_date(col("ymd"), "yyyy-MM-dd").alias("date").cast(DateType()),
-    col("close").alias("price").cast(DecimalType(18, 5)),
+    regexp_replace(col("last_close"), ",", "").cast(DecimalType(10, 2)).alias("price"),
+    col("change_precent").alias("change_percent").cast(DecimalType(10, 2)),
     col("index_name").cast(StringType()),
 )
 
 # create_at, update_at 컬럼 추가
 silver_df = silver_df.withColumn("create_at", current_timestamp())
 silver_df = silver_df.withColumn("update_at", current_timestamp())
+
 
 # Spark DataFrame을 DynamicFrame으로 변환
 silver_dynamic_frame = DynamicFrame.fromDF(
@@ -171,9 +175,9 @@ WriteToRedshift = glueContext.write_dynamic_frame.from_options(
         "url": secrets[2],
         "user": secrets[0],
         "password": secrets[1],
-        "dbtable": "silver.fact_msci_index",
+        "dbtable": "silver.fact_index_data",
         "redshiftTmpDir": "s3://team3-1-s3/data/redshift_temp/",
-        "preactions": "CREATE TABLE IF NOT EXISTS silver.fact_msci_index (date DATE, price DECIMAL(18, 5), index_name VARCHAR, create_at TIMESTAMP, update_at TIMESTAMP);",
+        "preactions": "CREATE TABLE IF NOT EXISTS silver.fact_index_data (date DATE, price DECIMAL(10, 2), change_percent DECIMAL(10, 2), index_name VARCHAR, create_at TIMESTAMP, update_at TIMESTAMP);",
     },
     transformation_ctx="WriteToRedshift",
 )

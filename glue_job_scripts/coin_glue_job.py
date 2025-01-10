@@ -1,4 +1,6 @@
 import json
+import logging
+import os
 import sys
 from datetime import datetime
 
@@ -19,6 +21,8 @@ from pyspark.sql.functions import (
 )
 from pyspark.sql.types import DecimalType, IntegerType
 
+logging.basicConfig(level=logging.INFO)
+
 args = getResolvedOptions(sys.argv + ["--JOB_NAME", "default_job_name"], ["JOB_NAME"])
 glueContext = GlueContext(SparkContext.getOrCreate())
 spark = glueContext.spark_session
@@ -26,6 +30,7 @@ job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 
 
+# Secrets Manager에서 Redshift 자격 증명 가져오기
 def get_secret():
     secret_name = "team3-1-redshift-access"  # pragma: allowlist secret
     region_name = "ap-northeast-2"
@@ -35,11 +40,13 @@ def get_secret():
 
     try:
         get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+        redshift_jdbc = client.get_secret_value(SecretId="redshift-jdbc-conn")
     except ClientError as e:
         raise e
 
     secret = json.loads(get_secret_value_response["SecretString"])
-    return secret["username"], secret["password"]
+    jdbc = json.loads(redshift_jdbc["SecretString"])
+    return secret["username"], secret["password"], jdbc["redshift_jdbc_conn"]
 
 
 secrets = get_secret()
@@ -47,7 +54,7 @@ secrets = get_secret()
 
 # Redshift에서 테이블 존재 여부 확인
 def check_table_exists():
-    jdbc_url = "jdbc:redshift://team3-1-cluster.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com:5439/dev"
+    jdbc_url = secrets[2]
     query = "SELECT 1 FROM pg_tables WHERE tablename = 'fact_coin_data' AND schemaname = 'silver'"
 
     try:
@@ -61,17 +68,17 @@ def check_table_exists():
         )
         return result_df.count() > 0
     except Exception as e:
-        print(f"Error checking table existence: {e}")
+        logging.error(f"테이블 존재 여부 확인 오류: {e}")
         return False
 
 
 # Redshift에서 가장 최근 날짜 가져오기
 def get_latest_date_from_redshift():
     if not check_table_exists():
-        print("Table does not exist, using default date.")
+        logging.info("테이블이 존재하지 않음. 기본 날짜 사용")
         return datetime.strptime("2018-01-01", "%Y-%m-%d").date()
 
-    jdbc_url = "jdbc:redshift://team3-1-cluster.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com:5439/dev"
+    jdbc_url = secrets[2]
     query = "(SELECT MAX(date) AS max_date FROM silver.fact_coin_data)"
 
     try:
@@ -87,11 +94,11 @@ def get_latest_date_from_redshift():
         latest_date_row = redshift_df.collect()[0]
         latest_date = latest_date_row["max_date"]
         if latest_date is None:
-            print("No data found, using default date.")
+            logging.info("데이터가 없음. 기본 날짜 사용")
             return datetime.strptime("2018-01-01", "%Y-%m-%d").date()
         return latest_date
     except Exception as e:
-        print(f"Error accessing Redshift: {e}")
+        logging.error(f"Redshift 접근 오류: {e}")
         return datetime.strptime("2018-01-01", "%Y-%m-%d").date()
 
 
@@ -134,8 +141,8 @@ s3_paths = get_s3_paths_after_date(bucket_name, prefix, latest_date)
 
 # S3 경로가 비어 있을 경우 Job 종료
 if not s3_paths:
-    print("No new data to process. Exiting job.")
-    sys.exit(0)
+    logging.info("새로운 데이터가 없음. 작업 종료")
+    os._exit(0)
 
 # S3에서 데이터 로드
 LoadFromS3 = glueContext.create_dynamic_frame.from_options(
@@ -169,10 +176,6 @@ silver_df = bronze_df.select(
     current_timestamp().alias("update_at"),
 )
 
-# # S3에 저장
-# silver_df = silver_df.coalesce(1)  # 파티션을 1개로 통합
-# silver_df.write.mode("overwrite").parquet("s3://team3-1-s3/silver/coin_data")
-
 # Spark DataFrame을 DynamicFrame으로 변환
 silver_dynamic_frame = DynamicFrame.fromDF(
     silver_df, glueContext, "silver_dynamic_frame"
@@ -183,7 +186,7 @@ WriteToRedshift = glueContext.write_dynamic_frame.from_options(
     frame=silver_dynamic_frame,
     connection_type="redshift",
     connection_options={
-        "url": "jdbc:redshift://team3-1-cluster.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com:5439/dev",
+        "url": secrets[2],
         "user": secrets[0],
         "password": secrets[1],
         "dbtable": "silver.fact_coin_data",

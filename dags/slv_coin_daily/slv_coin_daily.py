@@ -28,23 +28,10 @@ with DAG(
         task_id="wait_for_bronze",
         external_dag_id="brz_coin_daily",
         external_task_id="fetch_coin_data",  # bronze DAG의 마지막 task
-        timeout=600,  # 10분
+        timeout=1800,  # 30분
         mode="reschedule",  # 실패 시 재시도 방식
         poke_interval=60,  # 1분마다 확인
     )
-
-    # run_crawler_task = GlueCrawlerOperator(
-    #     task_id="run_crawler_task",
-    #     config={
-    #         "Name": "coin_crawler",
-    #         "Role": "AWSGlueServiceRole-Team3-1",
-    #         "DatabaseName": "team3-db",
-    #         "Targets": {"S3Targets": [{"Path": "s3://team3-1-s3/bronze/coin_data/"}]},
-    #     },
-    #     aws_conn_id="aws_conn_id",
-    #     wait_for_completion=True,
-    #     region_name="ap-northeast-2",
-    # )
 
     coin_glue_job = GlueJobOperator(
         task_id="coin_glue_job",
@@ -52,7 +39,7 @@ with DAG(
         script_location="s3://team3-1-s3/glue_job_scripts/coin_glue_job.py",  # Glue Job의 스크립트가 위치한 S3 경로
         region_name="ap-northeast-2",  # Glue Job이 실행될 AWS 리전
         iam_role_name="AWSGlueServiceRole-Team3-1",  # Glue Job이 사용할 IAM 역할
-        num_of_dpus=2,  # Glue Job에 할당할 DPUs 수
+        num_of_dpus=6,  # Glue Job에 할당할 DPUs 수
         create_job_kwargs={
             "GlueVersion": "5.0",
             "MaxCapacity": 10,
