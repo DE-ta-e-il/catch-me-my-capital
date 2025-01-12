@@ -21,7 +21,7 @@ with DAG(
     tags=[Layer.BRONZE, "KOSPI", "KOSDAQ", Interval.DAILY.label],
     schedule="0 5 * * 1-5",
     start_date=datetime(2025, 1, 1),
-    catchup=True,
+    catchup=False,#True,
     max_active_runs=1,
 ) as dag:
     fetch_kr_stock_data = YFinanceOperator(

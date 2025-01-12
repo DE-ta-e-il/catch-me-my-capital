@@ -25,6 +25,22 @@ with DAG(
     tags=[Layer.SILVER, "market holiday", "triggered", Interval.DAILY.label],
     max_active_runs=1,
 ) as dag:
+    crawl_market_holiday = GlueCrawlerOperator(
+        task_id="crawl_market_holiday",
+        config={
+            "Name": "team3-holiday-crawler",
+            "Role": GLUE_ROLE,
+            "DatabaseName": "team3-db",
+            "Targets": {
+                "S3Targets": [
+                    {"Path": f"s3://{S3_BUCKET}/bronze/market_holiday/"},
+                ]
+            },
+        },
+        aws_conn_id=AWS_CONN_ID,
+        region_name=AWS_REGION,
+    )
+
     run_holiday_update_glue_job = GlueJobOperator(
         task_id="market_holiday_update_job",
         job_name="slv_calendar_holiday_update_daily",
@@ -41,4 +57,4 @@ with DAG(
         aws_conn_id=AWS_CONN_ID,
     )
 
-    run_holiday_update_glue_job
+    crawl_market_holiday >> run_holiday_update_glue_job
